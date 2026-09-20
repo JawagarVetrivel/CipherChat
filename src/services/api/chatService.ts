@@ -15,6 +15,10 @@ import { userService } from './userService';
 const STORAGE_CONVERSATIONS_KEY = 'cipherchat_conversations';
 const STORAGE_MESSAGES_KEY = 'cipherchat_messages_encrypted';
 
+const getApiBaseUrl = (): string => {
+  return (import.meta as { env?: { VITE_API_BASE_URL?: string } }).env?.VITE_API_BASE_URL?.replace(/\/$/, '') || '';
+};
+
 /**
  * ChatService
  *
@@ -47,6 +51,24 @@ class ChatService {
   }
 
   private loadPersistedData(): void {
+    const apiBase = getApiBaseUrl();
+    if (apiBase) {
+      const session = authService.getCurrentSession();
+      if (session) {
+        fetch(`${apiBase}/conversations`, {
+          headers: { Authorization: `Bearer ${session.token}` },
+        })
+          .then((res) => (res.ok ? res.json() : []))
+          .then((convs: Conversation[]) => {
+            if (convs && convs.length > 0) {
+              this.conversations = convs;
+              this.emitConversations();
+            }
+          })
+          .catch(() => {});
+      }
+    }
+
     try {
       const storedConvs = localStorage.getItem(this.getStorageKey(STORAGE_CONVERSATIONS_KEY));
       if (storedConvs) {
@@ -240,6 +262,25 @@ class ChatService {
   }
 
   public async getConversations(): Promise<Conversation[]> {
+    const apiBase = getApiBaseUrl();
+    if (apiBase) {
+      const session = authService.getCurrentSession();
+      if (session) {
+        try {
+          const res = await fetch(`${apiBase}/conversations`, {
+            headers: { Authorization: `Bearer ${session.token}` },
+          });
+          if (res.ok) {
+            const remoteConvs: Conversation[] = await res.json();
+            this.conversations = remoteConvs;
+            return remoteConvs;
+          }
+        } catch (err) {
+          console.warn('Failed to fetch remote conversations:', err);
+        }
+      }
+    }
+
     return [...this.conversations].sort(
       (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
     );
@@ -250,7 +291,32 @@ class ChatService {
   }
 
   public async getMessagesForConversation(conversationId: string): Promise<Message[]> {
-    const rawList = this.encryptedMessages.filter(m => m.conversationId === conversationId);
+    const apiBase = getApiBaseUrl();
+    let rawList = this.encryptedMessages.filter(m => m.conversationId === conversationId);
+
+    if (apiBase) {
+      const session = authService.getCurrentSession();
+      if (session) {
+        try {
+          const res = await fetch(`${apiBase}/conversations/${conversationId}/messages`, {
+            headers: { Authorization: `Bearer ${session.token}` },
+          });
+          if (res.ok) {
+            const remoteEnvelopes: EncryptedMessage[] = await res.json();
+            const existingIds = new Set(this.encryptedMessages.map(m => m.id));
+            for (const env of remoteEnvelopes) {
+              if (!existingIds.has(env.id)) {
+                this.encryptedMessages.push(env);
+              }
+            }
+            rawList = this.encryptedMessages.filter(m => m.conversationId === conversationId);
+          }
+        } catch (err) {
+          console.warn('Failed to fetch remote messages:', err);
+        }
+      }
+    }
+
     const result: Message[] = [];
 
     for (const env of rawList) {
@@ -290,6 +356,36 @@ class ChatService {
    * Start a 1-to-1 direct conversation with another user.
    */
   public async getOrCreateDirectConversation(peerUser: Omit<User, 'email'>): Promise<DirectConversation> {
+    const apiBase = getApiBaseUrl();
+    if (apiBase) {
+      const session = authService.getCurrentSession();
+      if (session) {
+        try {
+          const res = await fetch(`${apiBase}/conversations/direct`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${session.token}`,
+            },
+            body: JSON.stringify({ participantId: peerUser.id }),
+          });
+          if (res.ok) {
+            const remoteConv: DirectConversation = await res.json();
+            const idx = this.conversations.findIndex(c => c.id === remoteConv.id);
+            if (idx >= 0) {
+              this.conversations[idx] = remoteConv;
+            } else {
+              this.conversations.unshift(remoteConv);
+            }
+            this.emitConversations();
+            return remoteConv;
+          }
+        } catch (err) {
+          console.warn('Failed to create remote direct conversation:', err);
+        }
+      }
+    }
+
     const existing = this.conversations.find(
       c => c.type === 'direct' && (c as DirectConversation).participant.id === peerUser.id
     ) as DirectConversation | undefined;
@@ -323,6 +419,35 @@ class ChatService {
   ): Promise<Group> {
     const currentUser = authService.getCurrentSession()?.user;
     if (!currentUser) throw new Error('Not authenticated');
+
+    const apiBase = getApiBaseUrl();
+    if (apiBase) {
+      const session = authService.getCurrentSession();
+      if (session) {
+        try {
+          const res = await fetch(`${apiBase}/conversations/group`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${session.token}`,
+            },
+            body: JSON.stringify({
+              name: name.trim(),
+              description: description?.trim(),
+              memberIds: memberUsers.map(u => u.id),
+            }),
+          });
+          if (res.ok) {
+            const remoteGroup: Group = await res.json();
+            this.conversations.unshift(remoteGroup);
+            this.emitConversations();
+            return remoteGroup;
+          }
+        } catch (err) {
+          console.warn('Failed to create remote group:', err);
+        }
+      }
+    }
 
     const groupMembers: GroupMember[] = [
       {
@@ -358,6 +483,32 @@ class ChatService {
   }
 
   public async addGroupMembers(groupId: string, newMembers: Array<Omit<User, 'email'>>): Promise<Group> {
+    const apiBase = getApiBaseUrl();
+    if (apiBase) {
+      const session = authService.getCurrentSession();
+      if (session) {
+        try {
+          const res = await fetch(`${apiBase}/conversations/${groupId}/members`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${session.token}`,
+            },
+            body: JSON.stringify({ memberIds: newMembers.map(u => u.id) }),
+          });
+          if (res.ok) {
+            const updated: Group = await res.json();
+            const idx = this.conversations.findIndex(c => c.id === groupId);
+            if (idx >= 0) this.conversations[idx] = updated;
+            this.emitConversations();
+            return updated;
+          }
+        } catch (err) {
+          console.warn('Failed to add members on backend:', err);
+        }
+      }
+    }
+
     const group = this.conversations.find(c => c.id === groupId && c.type === 'group') as Group | undefined;
     if (!group) throw new Error('Group not found');
 
@@ -380,6 +531,28 @@ class ChatService {
   }
 
   public async removeGroupMember(groupId: string, memberId: string): Promise<Group> {
+    const apiBase = getApiBaseUrl();
+    if (apiBase) {
+      const session = authService.getCurrentSession();
+      if (session) {
+        try {
+          const res = await fetch(`${apiBase}/conversations/${groupId}/members/${memberId}`, {
+            method: 'DELETE',
+            headers: { Authorization: `Bearer ${session.token}` },
+          });
+          if (res.ok) {
+            const updated: Group = await res.json();
+            const idx = this.conversations.findIndex(c => c.id === groupId);
+            if (idx >= 0) this.conversations[idx] = updated;
+            this.emitConversations();
+            return updated;
+          }
+        } catch (err) {
+          console.warn('Failed to remove member on backend:', err);
+        }
+      }
+    }
+
     const group = this.conversations.find(c => c.id === groupId && c.type === 'group') as Group | undefined;
     if (!group) throw new Error('Group not found');
 
@@ -391,6 +564,32 @@ class ChatService {
   }
 
   public async updateGroupName(groupId: string, newName: string): Promise<Group> {
+    const apiBase = getApiBaseUrl();
+    if (apiBase) {
+      const session = authService.getCurrentSession();
+      if (session) {
+        try {
+          const res = await fetch(`${apiBase}/conversations/${groupId}`, {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${session.token}`,
+            },
+            body: JSON.stringify({ name: newName.trim() }),
+          });
+          if (res.ok) {
+            const updated: Group = await res.json();
+            const idx = this.conversations.findIndex(c => c.id === groupId);
+            if (idx >= 0) this.conversations[idx] = updated;
+            this.emitConversations();
+            return updated;
+          }
+        } catch (err) {
+          console.warn('Failed to update group name on backend:', err);
+        }
+      }
+    }
+
     const group = this.conversations.find(c => c.id === groupId && c.type === 'group') as Group | undefined;
     if (!group) throw new Error('Group not found');
 
@@ -403,12 +602,34 @@ class ChatService {
 
   public async leaveGroup(groupId: string): Promise<void> {
     if (!this.currentUserId) return;
+    const apiBase = getApiBaseUrl();
+    if (apiBase) {
+      const session = authService.getCurrentSession();
+      if (session) {
+        fetch(`${apiBase}/conversations/${groupId}/leave`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${session.token}` },
+        }).catch(() => {});
+      }
+    }
+
     this.conversations = this.conversations.filter(c => c.id !== groupId);
     this.persistData();
     this.emitConversations();
   }
 
   public markAsRead(conversationId: string): void {
+    const apiBase = getApiBaseUrl();
+    if (apiBase) {
+      const session = authService.getCurrentSession();
+      if (session) {
+        fetch(`${apiBase}/conversations/${conversationId}/read`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${session.token}` },
+        }).catch(() => {});
+      }
+    }
+
     const conv = this.conversations.find(c => c.id === conversationId);
     if (conv && conv.unreadCount > 0) {
       conv.unreadCount = 0;
@@ -443,6 +664,22 @@ class ChatService {
 
     // STEP 2: Dispatch ciphertext envelope across WebSocket wire
     wsClient.sendMessage(encryptedEnvelope);
+
+    // If WebSocket is not connected or in fallback, also persist via REST
+    const apiBase = getApiBaseUrl();
+    if (apiBase && wsClient.getStatus() !== 'connected') {
+      const session = authService.getCurrentSession();
+      if (session) {
+        fetch(`${apiBase}/messages`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session.token}`,
+          },
+          body: JSON.stringify(encryptedEnvelope),
+        }).catch(() => {});
+      }
+    }
 
     // STEP 3: Create decrypted in-memory representation for UI
     const inMemoryMsg: Message = {

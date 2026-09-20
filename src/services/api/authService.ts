@@ -64,11 +64,16 @@ const DEFAULT_USERS: Array<User & { passwordHash: string; email: string }> = [
 const STORAGE_USERS_KEY = 'cipherchat_registered_users';
 const STORAGE_SESSION_KEY = 'cipherchat_auth_session';
 
+const getApiBaseUrl = (): string => {
+  return (import.meta as { env?: { VITE_API_BASE_URL?: string } }).env?.VITE_API_BASE_URL?.replace(/\/$/, '') || '';
+};
+
 /**
  * AuthService
  *
  * Clean authentication abstraction for CipherChat.
- * Designed to connect to Supabase / Render backend in production.
+ * Seamlessly connects to Supabase / Render backend in production when VITE_API_BASE_URL is set,
+ * with resilient offline sandbox fallback.
  */
 class AuthService {
   private users: Array<User & { passwordHash: string; email: string }> = [];
@@ -100,7 +105,22 @@ class AuthService {
   }
 
   public async register(payload: RegisterPayload): Promise<AuthResponse> {
-    // Normalization & Validation
+    const apiBase = getApiBaseUrl();
+    if (apiBase) {
+      const res = await fetch(`${apiBase}/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Registration failed');
+      }
+      this.persistSession(data.user, data.token);
+      return data;
+    }
+
+    // Local sandbox fallback
     const cleanEmail = payload.email.trim().toLowerCase();
     const cleanUsername = payload.username.trim().toLowerCase().replace(/^@/, '');
 
@@ -156,6 +176,22 @@ class AuthService {
   }
 
   public async login(payload: LoginPayload): Promise<AuthResponse> {
+    const apiBase = getApiBaseUrl();
+    if (apiBase) {
+      const res = await fetch(`${apiBase}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Invalid credentials');
+      }
+      this.persistSession(data.user, data.token);
+      return data;
+    }
+
+    // Local sandbox fallback
     const cleanEmail = payload.email.trim().toLowerCase();
     const user = this.users.find(u => u.email.toLowerCase() === cleanEmail);
 
@@ -198,6 +234,25 @@ class AuthService {
   }
 
   public async updateProfile(userId: string, updates: { displayName?: string }): Promise<User> {
+    const apiBase = getApiBaseUrl();
+    const session = this.getCurrentSession();
+    if (apiBase && session) {
+      const res = await fetch(`${apiBase}/users/profile`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.token}`,
+        },
+        body: JSON.stringify(updates),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to update profile');
+      }
+      this.persistSession(data, session.token);
+      return data;
+    }
+
     const user = this.users.find(u => u.id === userId);
     if (!user) throw new Error('User not found');
 

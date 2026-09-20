@@ -1,6 +1,10 @@
 import { User } from '../../types';
 import { authService } from './authService';
 
+const getApiBaseUrl = (): string => {
+  return (import.meta as { env?: { VITE_API_BASE_URL?: string } }).env?.VITE_API_BASE_URL?.replace(/\/$/, '') || '';
+};
+
 /**
  * UserService
  *
@@ -19,6 +23,21 @@ class UserService {
     query: string,
     currentUserId?: string
   ): Promise<Array<Omit<User, 'email'>>> {
+    const apiBase = getApiBaseUrl();
+    if (apiBase) {
+      const session = authService.getCurrentSession();
+      try {
+        const res = await fetch(`${apiBase}/users/search?q=${encodeURIComponent(query)}`, {
+          headers: session ? { Authorization: `Bearer ${session.token}` } : {},
+        });
+        if (res.ok) {
+          return await res.json();
+        }
+      } catch (err) {
+        console.warn('Backend search request failed, falling back to local list:', err);
+      }
+    }
+
     const cleanQuery = query.trim().toLowerCase().replace(/^@/, '');
     if (!cleanQuery) return [];
 
@@ -46,6 +65,21 @@ class UserService {
   }
 
   public async getUserById(userId: string): Promise<Omit<User, 'email'> | null> {
+    const apiBase = getApiBaseUrl();
+    if (apiBase) {
+      const session = authService.getCurrentSession();
+      try {
+        const res = await fetch(`${apiBase}/users/${userId}`, {
+          headers: session ? { Authorization: `Bearer ${session.token}` } : {},
+        });
+        if (res.ok) {
+          return await res.json();
+        }
+      } catch (err) {
+        console.warn(`Backend fetch user by id failed: ${userId}`, err);
+      }
+    }
+
     const allUsers = authService.getAllRegisteredUsers();
     const found = allUsers.find(u => u.id === userId);
     if (!found) return null;
@@ -63,6 +97,21 @@ class UserService {
 
   public async getUserByUsername(username: string): Promise<Omit<User, 'email'> | null> {
     const clean = username.trim().toLowerCase().replace(/^@/, '');
+    const apiBase = getApiBaseUrl();
+    if (apiBase) {
+      const session = authService.getCurrentSession();
+      try {
+        const res = await fetch(`${apiBase}/users/username/${clean}`, {
+          headers: session ? { Authorization: `Bearer ${session.token}` } : {},
+        });
+        if (res.ok) {
+          return await res.json();
+        }
+      } catch (err) {
+        console.warn(`Backend fetch user by username failed: ${clean}`, err);
+      }
+    }
+
     const allUsers = authService.getAllRegisteredUsers();
     const found = allUsers.find(u => u.username.toLowerCase() === clean);
     if (!found) return null;

@@ -270,9 +270,9 @@ class AuthService {
       publicKeyFingerprint: user.publicKeyFingerprint,
     };
 
-    const session = this.getCurrentSession();
-    if (session && session.user.id === userId) {
-      this.persistSession(updatedSafe, session.token);
+    const activeSession = this.getCurrentSession();
+    if (activeSession && activeSession.user.id === userId) {
+      this.persistSession(updatedSafe, activeSession.token);
     }
 
     return updatedSafe;

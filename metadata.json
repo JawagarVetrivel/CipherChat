@@ -1,0 +1,6 @@
+{
+  "name": "CipherChat",
+  "description": "A secure web-based chat application frontend architected for client-side end-to-end encryption, WebSocket real-time messaging, and multi-user collaboration.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

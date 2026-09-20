@@ -9,10 +9,11 @@
     "preview": "vite preview",
     "clean": "rm -rf dist server.js",
     "lint": "tsc --noEmit",
+    "backend:install": "npm --prefix backend install",
     "backend:dev": "npm --prefix backend run dev",
     "backend:test": "npm --prefix backend test",
     "backend:build": "npm --prefix backend run build",
-    "backend:start": "npm --prefix backend start"
+    "backend:start": "node backend/dist/server.js"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",

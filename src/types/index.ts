@@ -22,6 +22,7 @@ export interface DirectConversation {
   id: string;
   type: 'direct';
   participant: User;
+  participantIds?: string[];
   lastMessage?: Message;
   unreadCount: number;
   updatedAt: string;

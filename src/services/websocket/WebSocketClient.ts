@@ -45,9 +45,9 @@ export class WebSocketClient {
   private statusListeners: Set<EventCallback<WebSocketConnectionStatus>> = new Set();
 
   constructor(options: WebSocketClientOptions = {}) {
-    // Read from environment variable VITE_WS_URL or option
-    const envWsUrl = (import.meta as { env?: { VITE_WS_URL?: string } }).env?.VITE_WS_URL || '';
-    this.url = options.url || envWsUrl || '';
+    // Read from environment variable VITE_WS_URL or fallback to live Render backend
+    const envWsUrl = (import.meta as { env?: { VITE_WS_URL?: string } }).env?.VITE_WS_URL;
+    this.url = options.url || (envWsUrl && envWsUrl.trim() ? envWsUrl : 'wss://cipherchat-rtn2.onrender.com/ws');
     this.maxReconnectAttempts = options.maxReconnectAttempts ?? 5;
   }
 

@@ -1,7 +1,7 @@
 import { Conversation, DirectConversation, Group } from '../types/index.js';
 export declare class ConversationService {
     getConversationsForUser(userId: string): Promise<Conversation[]>;
-    getConversationById(id: string): Promise<Conversation | null>;
+    getConversationById(id: string, forUserId?: string): Promise<Conversation | null>;
     /**
      * Start or retrieve a 1-to-1 direct conversation between two users.
      * Idempotent: returns existing conversation if already created.

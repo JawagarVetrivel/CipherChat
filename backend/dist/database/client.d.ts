@@ -22,7 +22,7 @@ declare class DatabaseStore {
     updateUser(id: string, updates: Partial<User>): Promise<User | null>;
     searchUsers(query: string, excludeUserId?: string): Promise<SafeUser[]>;
     getConversationsForUser(userId: string): Promise<Conversation[]>;
-    getConversationById(id: string): Promise<Conversation | null>;
+    getConversationById(id: string, forUserId?: string): Promise<Conversation | null>;
     saveConversation(conv: Conversation): Promise<Conversation>;
     deleteConversation(id: string): Promise<boolean>;
     getMessagesByConversation(conversationId: string): Promise<EncryptedMessage[]>;

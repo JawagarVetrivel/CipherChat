@@ -104,7 +104,7 @@ export const NewDirectChatModal: React.FC<NewDirectChatModalProps> = ({ isOpen, 
             <input
               id="search-user-input"
               type="text"
-              placeholder="Search by username (e.g. @rahul123)..."
+              placeholder={currentUser?.username === 'rahul123' ? "Search by username (e.g. @priya_k)..." : "Search by username (e.g. @rahul123)..."}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               autoFocus
@@ -127,7 +127,9 @@ export const NewDirectChatModal: React.FC<NewDirectChatModalProps> = ({ isOpen, 
                 No users found matching &quot;{query}&quot;
               </p>
               <p className="text-[11px] text-neutral-400 mt-1">
-                Try searching for @rahul123, @priya_k, or @alex_c
+                {currentUser?.username === 'rahul123'
+                  ? 'Try searching for @priya_k, @alex_c, or @crypto_prof'
+                  : 'Try searching for @rahul123, @priya_k, or @alex_c'}
               </p>
             </div>
           ) : (

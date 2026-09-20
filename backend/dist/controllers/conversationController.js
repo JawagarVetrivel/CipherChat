@@ -31,7 +31,7 @@ class ConversationController {
     async getConversation(req, res, next) {
         try {
             const { id } = req.params;
-            const conversation = await conversationService_js_1.conversationService.getConversationById(id);
+            const conversation = await conversationService_js_1.conversationService.getConversationById(id, req.user.id);
             if (!conversation) {
                 res.status(404).json({ error: 'Conversation not found.' });
                 return;

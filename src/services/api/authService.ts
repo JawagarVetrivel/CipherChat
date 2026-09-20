@@ -65,7 +65,9 @@ const STORAGE_USERS_KEY = 'cipherchat_registered_users';
 const STORAGE_SESSION_KEY = 'cipherchat_auth_session';
 
 const getApiBaseUrl = (): string => {
-  return (import.meta as { env?: { VITE_API_BASE_URL?: string } }).env?.VITE_API_BASE_URL?.replace(/\/$/, '') || '';
+  const envUrl = (import.meta as { env?: { VITE_API_BASE_URL?: string } }).env?.VITE_API_BASE_URL;
+  if (envUrl && envUrl.trim()) return envUrl.replace(/\/$/, '');
+  return 'https://cipherchat-rtn2.onrender.com/api';
 };
 
 /**

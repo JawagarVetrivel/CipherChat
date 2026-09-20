@@ -8,8 +8,8 @@ export class ConversationService {
     return db.getConversationsForUser(userId);
   }
 
-  public async getConversationById(id: string): Promise<Conversation | null> {
-    return db.getConversationById(id);
+  public async getConversationById(id: string, forUserId?: string): Promise<Conversation | null> {
+    return db.getConversationById(id, forUserId);
   }
 
   /**
@@ -47,6 +47,7 @@ export class ConversationService {
       id: convId,
       type: 'direct',
       participant: peer,
+      participantIds: [currentUserId, peerUserId],
       unreadCount: 0,
       createdAt: now,
       updatedAt: now,

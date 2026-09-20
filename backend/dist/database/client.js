@@ -153,7 +153,7 @@ class DatabaseStore {
                 q = q.or(`username.ilike.%${clean}%,display_name.ilike.%${clean}%`);
             }
             const { data, error } = await q.limit(20);
-            if (!error && data) {
+            if (!error && data && data.length > 0) {
                 return data.map((d) => ({
                     id: d.id,
                     username: d.username,
@@ -193,13 +193,40 @@ class DatabaseStore {
         const list = [];
         for (const conv of this.conversations.values()) {
             if (conv.type === 'direct') {
-                // Direct conversation check: Is caller a participant or the other party?
-                // Participant ID or conversation id contains userId
                 const d = conv;
-                const isMember = d.participant.id !== userId && d.id.includes(userId);
-                // Also support conversation where user is either party
-                if (isMember || d.participant.id === userId || d.id.includes(userId)) {
-                    list.push(conv);
+                let pIds = d.participantIds || [];
+                if (pIds.length === 0 && d.id.startsWith('conv_direct_')) {
+                    pIds = d.id.replace('conv_direct_', '').split('_').filter(Boolean);
+                }
+                if (pIds.length === 0 && d.participant?.id) {
+                    pIds = [d.participant.id];
+                }
+                const isMember = pIds.includes(userId) || d.participant?.id === userId || d.id.includes(userId);
+                if (isMember) {
+                    // Resolve other party so the caller sees their conversation peer, NEVER themselves
+                    const peerId = pIds.find((id) => id !== userId) || (d.participant?.id !== userId ? d.participant?.id : null);
+                    let peerUser = d.participant;
+                    if (peerId && (peerId !== d.participant?.id || d.participant?.id === userId)) {
+                        const u = await this.findUserById(peerId);
+                        if (u) {
+                            peerUser = {
+                                id: u.id,
+                                username: u.username,
+                                displayName: u.displayName,
+                                status: u.status,
+                                lastSeen: u.lastSeen,
+                                publicKeyFingerprint: u.publicKeyFingerprint,
+                                avatarUrl: u.avatarUrl,
+                                createdAt: u.createdAt,
+                                updatedAt: u.updatedAt,
+                            };
+                        }
+                    }
+                    list.push({
+                        ...d,
+                        participantIds: pIds.length >= 2 ? pIds : (peerId ? [userId, peerId] : d.participantIds),
+                        participant: peerUser,
+                    });
                 }
             }
             else {
@@ -211,13 +238,50 @@ class DatabaseStore {
         }
         return list.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
     }
-    async getConversationById(id) {
+    async getConversationById(id, forUserId) {
         await this.init();
-        return this.conversations.get(id) || null;
+        const conv = this.conversations.get(id);
+        if (!conv)
+            return null;
+        if (conv.type === 'direct' && forUserId) {
+            const d = conv;
+            let pIds = d.participantIds || [];
+            if (pIds.length === 0 && d.id.startsWith('conv_direct_')) {
+                pIds = d.id.replace('conv_direct_', '').split('_').filter(Boolean);
+            }
+            const peerId = pIds.find((pid) => pid !== forUserId) || (d.participant?.id !== forUserId ? d.participant?.id : null);
+            if (peerId && (peerId !== d.participant?.id || d.participant?.id === forUserId)) {
+                const u = await this.findUserById(peerId);
+                if (u) {
+                    return {
+                        ...d,
+                        participantIds: pIds,
+                        participant: {
+                            id: u.id,
+                            username: u.username,
+                            displayName: u.displayName,
+                            status: u.status,
+                            lastSeen: u.lastSeen,
+                            publicKeyFingerprint: u.publicKeyFingerprint,
+                            avatarUrl: u.avatarUrl,
+                            createdAt: u.createdAt,
+                            updatedAt: u.updatedAt,
+                        },
+                    };
+                }
+            }
+        }
+        return conv;
     }
     async saveConversation(conv) {
         await this.init();
         conv.updatedAt = new Date().toISOString();
+        if (conv.type === 'direct') {
+            const d = conv;
+            if (!d.participantIds && d.id.startsWith('conv_direct_')) {
+                d.participantIds = d.id.replace('conv_direct_', '').split('_').filter(Boolean);
+            }
+        }
         this.conversations.set(conv.id, conv);
         return conv;
     }

@@ -8,8 +8,8 @@ class ConversationService {
     async getConversationsForUser(userId) {
         return client_js_1.db.getConversationsForUser(userId);
     }
-    async getConversationById(id) {
-        return client_js_1.db.getConversationById(id);
+    async getConversationById(id, forUserId) {
+        return client_js_1.db.getConversationById(id, forUserId);
     }
     /**
      * Start or retrieve a 1-to-1 direct conversation between two users.
@@ -36,6 +36,7 @@ class ConversationService {
             id: convId,
             type: 'direct',
             participant: peer,
+            participantIds: [currentUserId, peerUserId],
             unreadCount: 0,
             createdAt: now,
             updatedAt: now,

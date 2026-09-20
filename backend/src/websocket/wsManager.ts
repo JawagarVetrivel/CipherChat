@@ -70,14 +70,14 @@ export class WebSocketManager {
 
     if (conv.type === 'direct') {
       const d = conv as DirectConversation;
-      // Extract both participants from direct conversation
-      // The participant field has the peer, and the conversation id conv_direct_userA_userB contains both
-      if (d.participant.id !== excludeUserId) {
-        recipientUserIds.push(d.participant.id);
+      const pIds: string[] = d.participantIds || [];
+      if (pIds.length === 0 && d.id.startsWith('conv_direct_')) {
+        pIds.push(...d.id.replace('conv_direct_', '').split('_').filter(Boolean));
       }
-      // If conversation ID contains both user IDs
-      const parts = d.id.replace('conv_direct_', '').split('_');
-      for (const uid of parts) {
+      if (d.participant?.id && !pIds.includes(d.participant.id)) {
+        pIds.push(d.participant.id);
+      }
+      for (const uid of pIds) {
         if (uid && uid !== excludeUserId && !recipientUserIds.includes(uid)) {
           recipientUserIds.push(uid);
         }

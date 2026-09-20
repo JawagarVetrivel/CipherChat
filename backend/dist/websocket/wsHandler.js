@@ -192,7 +192,8 @@ async function handleIncomingEvent(ws, event) {
             let isMember = false;
             if (conversation.type === 'direct') {
                 const d = conversation;
-                isMember = d.participant.id === userId || d.id.includes(userId);
+                const pIds = d.participantIds || (d.id.startsWith('conv_direct_') ? d.id.replace('conv_direct_', '').split('_').filter(Boolean) : []);
+                isMember = pIds.includes(userId) || d.participant.id === userId || d.id.includes(userId);
             }
             else {
                 const g = conversation;

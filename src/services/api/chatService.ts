@@ -16,7 +16,9 @@ const STORAGE_CONVERSATIONS_KEY = 'cipherchat_conversations';
 const STORAGE_MESSAGES_KEY = 'cipherchat_messages_encrypted';
 
 const getApiBaseUrl = (): string => {
-  return (import.meta as { env?: { VITE_API_BASE_URL?: string } }).env?.VITE_API_BASE_URL?.replace(/\/$/, '') || '';
+  const envUrl = (import.meta as { env?: { VITE_API_BASE_URL?: string } }).env?.VITE_API_BASE_URL;
+  if (envUrl && envUrl.trim()) return envUrl.replace(/\/$/, '');
+  return 'https://cipherchat-rtn2.onrender.com/api';
 };
 
 /**
@@ -60,8 +62,9 @@ class ChatService {
         })
           .then((res) => (res.ok ? res.json() : []))
           .then((convs: Conversation[]) => {
-            if (convs && convs.length > 0) {
+            if (convs && Array.isArray(convs) && convs.length > 0) {
               this.conversations = convs;
+              this.persistData();
               this.emitConversations();
             }
           })
@@ -73,6 +76,38 @@ class ChatService {
       const storedConvs = localStorage.getItem(this.getStorageKey(STORAGE_CONVERSATIONS_KEY));
       if (storedConvs) {
         this.conversations = JSON.parse(storedConvs);
+        // Self-heal: If any direct conversation has the current user as the participant, fix it
+        const currentSession = authService.getCurrentSession();
+        const currentUName = currentSession?.user?.username;
+        this.conversations = this.conversations.map((c) => {
+          if (c.type === 'direct') {
+            const dc = c as DirectConversation;
+            if (dc.participant.id === this.currentUserId || (currentUName && dc.participant.username === currentUName)) {
+              const fallbackPeer: User = (currentUName === 'rahul123' || this.currentUserId === 'user_rahul' || this.currentUserId === 'a1111111-1111-4111-a111-111111111111')
+                ? {
+                    id: 'b2222222-2222-4222-b222-222222222222',
+                    username: 'priya_k',
+                    displayName: 'Priya Kapoor',
+                    status: 'online' as const,
+                    publicKeyFingerprint: 'B391 7CD4 12EE 8840',
+                  }
+                : {
+                    id: 'a1111111-1111-4111-a111-111111111111',
+                    username: 'rahul123',
+                    displayName: 'Rahul Sharma',
+                    status: 'online' as const,
+                    publicKeyFingerprint: '8F21 A4BC 9901 3E7D',
+                  };
+              return {
+                ...dc,
+                id: `conv_direct_${[this.currentUserId || 'user', fallbackPeer.id].sort().join('_')}`,
+                participant: fallbackPeer,
+                participantIds: [this.currentUserId || 'user', fallbackPeer.id],
+              };
+            }
+          }
+          return c;
+        });
       } else {
         this.seedInitialConversations();
       }
@@ -107,9 +142,8 @@ class ChatService {
   private seedInitialConversations(): void {
     if (!this.currentUserId) return;
 
-    // Seed conversation with Rahul Sharma for the university crypto project
     const rahulUser: User = {
-      id: 'user_rahul',
+      id: 'a1111111-1111-4111-a111-111111111111',
       username: 'rahul123',
       displayName: 'Rahul Sharma',
       status: 'online',
@@ -117,23 +151,27 @@ class ChatService {
     };
 
     const priyaUser: User = {
-      id: 'user_priya',
+      id: 'b2222222-2222-4222-b222-222222222222',
       username: 'priya_k',
       displayName: 'Priya Kapoor',
       status: 'away',
       publicKeyFingerprint: 'B391 7CD4 12EE 8840',
     };
 
-    const directRahul: DirectConversation = {
-      id: `conv_direct_${rahulUser.id}`,
+    const currentAuth = authService.getCurrentSession()?.user;
+    const isCurrentUserRahul = currentAuth?.username === 'rahul123' || this.currentUserId === rahulUser.id || this.currentUserId === 'user_rahul';
+    const peerUser = isCurrentUserRahul ? priyaUser : rahulUser;
+
+    const directConversation: DirectConversation = {
+      id: `conv_direct_${[this.currentUserId, peerUser.id].sort().join('_')}`,
       type: 'direct',
-      participant: rahulUser,
+      participant: peerUser,
+      participantIds: [this.currentUserId, peerUser.id],
       unreadCount: 0,
       createdAt: new Date(Date.now() - 3600000 * 2).toISOString(),
       updatedAt: new Date(Date.now() - 3600000).toISOString(),
     };
 
-    const currentAuth = authService.getCurrentSession()?.user;
     const currentUserForGroup: User = currentAuth || {
       id: this.currentUserId,
       username: 'current_user',
@@ -142,7 +180,7 @@ class ChatService {
     };
 
     const cryptoGroup: Group = {
-      id: 'group_crypto_project',
+      id: 'e5555555-5555-4555-e555-555555555555',
       type: 'group',
       name: 'Crypto Lab Team',
       description: 'University Cryptography project: E2EE protocol implementation and testing.',
@@ -157,20 +195,21 @@ class ChatService {
       unreadCount: 0,
     };
 
-    this.conversations = [directRahul, cryptoGroup];
+    this.conversations = [directConversation, cryptoGroup];
     this.persistData();
   }
 
   private async seedInitialMessages(): Promise<void> {
     if (!this.currentUserId) return;
 
-    // Initial messages in Rahul DM
-    const rahulId = 'user_rahul';
-    const convId = `conv_direct_${rahulId}`;
+    const currentAuth = authService.getCurrentSession()?.user;
+    const isCurrentUserRahul = currentAuth?.username === 'rahul123' || this.currentUserId === 'user_rahul' || this.currentUserId === 'a1111111-1111-4111-a111-111111111111';
+    const peerId = isCurrentUserRahul ? 'b2222222-2222-4222-b222-222222222222' : 'a1111111-1111-4111-a111-111111111111';
+    const convId = `conv_direct_${[this.currentUserId, peerId].sort().join('_')}`;
 
     const initialPackets: Array<{ senderId: string; text: string; offsetMinutes: number }> = [
       {
-        senderId: rahulId,
+        senderId: peerId,
         text: "Hey! Did you review the X3DH pre-key bundle specification for our assignment?",
         offsetMinutes: 45,
       },
@@ -180,7 +219,7 @@ class ChatService {
         offsetMinutes: 30,
       },
       {
-        senderId: rahulId,
+        senderId: peerId,
         text: "Almost. I'm working on the Double Ratchet.",
         offsetMinutes: 15,
       },
@@ -190,7 +229,7 @@ class ChatService {
     for (const item of initialPackets) {
       const env = await cryptoService.encryptMessage(
         convId,
-        item.senderId === this.currentUserId ? rahulId : this.currentUserId,
+        item.senderId === this.currentUserId ? peerId : this.currentUserId,
         item.text
       );
       env.senderId = item.senderId;
@@ -371,12 +410,17 @@ class ChatService {
           });
           if (res.ok) {
             const remoteConv: DirectConversation = await res.json();
+            // Safeguard: Ensure participant is ALWAYS the peerUser, not self
+            if (remoteConv.participant?.id === this.currentUserId) {
+              remoteConv.participant = peerUser as User;
+            }
             const idx = this.conversations.findIndex(c => c.id === remoteConv.id);
             if (idx >= 0) {
               this.conversations[idx] = remoteConv;
             } else {
               this.conversations.unshift(remoteConv);
             }
+            this.persistData();
             this.emitConversations();
             return remoteConv;
           }
@@ -387,17 +431,19 @@ class ChatService {
     }
 
     const existing = this.conversations.find(
-      c => c.type === 'direct' && (c as DirectConversation).participant.id === peerUser.id
+      c => c.type === 'direct' && ((c as DirectConversation).participant?.id === peerUser.id || (c as DirectConversation).participantIds?.includes(peerUser.id) || c.id.includes(peerUser.id))
     ) as DirectConversation | undefined;
 
     if (existing) {
+      existing.participant = peerUser as User;
       return existing;
     }
 
     const newConv: DirectConversation = {
-      id: `conv_direct_${peerUser.id}`,
+      id: `conv_direct_${[this.currentUserId || 'user', peerUser.id].sort().join('_')}`,
       type: 'direct',
       participant: peerUser as User,
+      participantIds: [this.currentUserId || 'user', peerUser.id],
       unreadCount: 0,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -705,7 +751,8 @@ class ChatService {
     this.emitConversations();
 
     // Trigger simulated peer replies in dev sandbox mode if chatting with simulated contact
-    if (conv.type === 'direct' && conv.participant.username === 'rahul123') {
+    const currentSessionUser = authService.getCurrentSession()?.user;
+    if (conv.type === 'direct' && conv.participant.username === 'rahul123' && currentSessionUser?.username !== 'rahul123') {
       this.triggerSimulatedRahulReply(conv.id, conv.participant.id, plaintext.trim());
     }
 

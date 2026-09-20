@@ -119,8 +119,9 @@ async function getSeedData() {
         unreadCount: 0,
     };
     // Direct conversation between Rahul and Priya
+    const directRahulPriyaId = `conv_direct_${[userRahul.id, userPriya.id].sort().join('_')}`;
     const directRahulPriya = {
-        id: 'f6666666-6666-4666-f666-666666666666',
+        id: directRahulPriyaId,
         type: 'direct',
         participant: {
             id: userPriya.id,
@@ -132,6 +133,7 @@ async function getSeedData() {
             createdAt: userPriya.createdAt,
             updatedAt: userPriya.updatedAt,
         },
+        participantIds: [userRahul.id, userPriya.id],
         unreadCount: 0,
         createdAt: new Date(now.getTime() - 86400000).toISOString(),
         updatedAt: new Date(now.getTime() - 900000).toISOString(),

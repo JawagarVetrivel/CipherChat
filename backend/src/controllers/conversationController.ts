@@ -35,7 +35,7 @@ export class ConversationController {
   public async getConversation(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
     try {
       const { id } = req.params;
-      const conversation = await conversationService.getConversationById(id);
+      const conversation = await conversationService.getConversationById(id, req.user!.id);
       if (!conversation) {
         res.status(404).json({ error: 'Conversation not found.' });
         return;

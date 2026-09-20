@@ -26,6 +26,7 @@ export interface DirectConversation {
     id: string;
     type: 'direct';
     participant: SafeUser;
+    participantIds?: string[];
     lastMessage?: EncryptedMessage;
     unreadCount: number;
     createdAt: string;

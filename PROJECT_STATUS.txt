@@ -1,0 +1,90 @@
+================================================================================
+CIPHERCHAT - PROJECT OVERVIEW, CURRENT STATUS & UPCOMING UPGRADES
+================================================================================
+
+1. ABOUT THE PROJECT
+--------------------------------------------------------------------------------
+Project Name     : CipherChat
+Project Type     : Secure Real-Time Messaging Platform (University Cryptography Project)
+Architecture     : Zero-Knowledge "Dumb Pipe" Relay Architecture
+Client Framework : React 19, TypeScript, Vite, TailwindCSS (Hosted on Vercel)
+Server Framework : Node.js, Express, TypeScript, WebSockets (Hosted on Render)
+Database         : Supabase PostgreSQL (Normalized relational model with RLS)
+GitHub Repo      : https://github.com/JawagarVetrivel/CipherChat
+
+Core Architectural Principle:
+CipherChat is intentionally built on a "dumb-pipe" relay design:
+- The server acts strictly as a transport and storage medium for opaque
+  ciphertext envelopes (e.g., enc:v1:...) and cryptographic ratchet headers.
+- The server NEVER has access to message plaintext.
+- The server NEVER stores, handles, or generates private cryptographic keys.
+- Encryption, decryption, and key management happen exclusively on client devices.
+- User privacy is strictly preserved: email addresses are completely hidden from
+  search results, user profiles, and group rosters. Discovery is by @username.
+
+
+2. CURRENT STATUS (COMPLETED & OPERATIONAL)
+--------------------------------------------------------------------------------
+Live Deployment Links:
+- Frontend Web App : https://cipher-chat-roan.vercel.app
+- Backend REST API : https://cipherchat-rtn2.onrender.com/api
+- WebSocket Relay  : wss://cipherchat-rtn2.onrender.com/ws
+- Health Check     : https://cipherchat-rtn2.onrender.com/api/health
+
+Completed Features & Current Capabilities:
+[x] Full-Duplex Real-Time WebSocket Transport
+    - Instant messaging, typing indicators, and presence updates (online/away/offline).
+[x] Zero-Knowledge Server Relay
+    - Server accepts, stores, and forwards encrypted envelopes without parsing plaintext.
+[x] Offline Message Queuing
+    - Messages sent to offline peers are stored encrypted with status 'sent'.
+    - Automatically flushed to the peer over WebSocket upon reconnection.
+[x] Dynamic Peer Resolution
+    - Direct conversations dynamically resolve the conversation contact relative to
+      the authenticated user, preventing self-messaging loops.
+[x] Interactive E2EE Security Inspector
+    - UI tool to inspect raw ciphertext packets, ratchet counters, and security status.
+[x] User Authentication & Privacy-First Directory
+    - User registration, login, and JWT-authenticated sessions.
+    - Directory lookup by @username with email privacy protection.
+[x] Group Conversations
+    - Create collaborative team groups, add/remove members, and update group settings.
+[x] Database Architecture & Pre-Seeded University Accounts
+    - 6 normalized tables: users, conversations, conversation_members, messages,
+      public_keys, sessions.
+    - Pre-seeded test accounts (Password for all: password123):
+      * @rahul123   (Rahul Sharma - Crypto Lab Lead)
+      * @priya_k    (Priya Kapoor - Collaborator)
+      * @alex_c     (Alex Chen - Team Member)
+      * @crypto_prof(Prof. Alan Vance - Advisor)
+
+
+3. UPCOMING UPGRADES & ROADMAP
+--------------------------------------------------------------------------------
+Phase 1: Full Client-Side Cryptographic Protocol Implementation
+- Extended Triple Diffie-Hellman (X3DH) Handshake:
+  * Client-side generation of Identity Keys (IK), Signed Pre-keys (SPK), and
+    One-Time Pre-keys (OPK) using Curve25519 (X25519) and Ed25519 signatures.
+  * Asynchronous session initiation through the backend's public-key repository.
+- Double Ratchet Algorithm:
+  * Symmetric KDF ratchet + Diffie-Hellman ratchet for continuous per-message rekeying.
+  * Authenticated encryption with AES-256-GCM or ChaCha20-Poly1305.
+  * Forward Secrecy (FS): Compromise of current keys does not compromise past messages.
+  * Post-Compromise Security (PCS / Break-in Recovery): Future keys heal automatically.
+
+Phase 2: Post-Quantum Cryptography (PQC) Integration
+- Hybrid key-exchange protocol pairing X25519 with post-quantum Key Encapsulation
+  Mechanisms (ML-KEM / CRYSTALS-Kyber) to defend against "Harvest Now, Decrypt Later".
+
+Phase 3: End-to-End Encrypted File & Media Sharing
+- Client-side chunked encryption for images, documents, and code snippets.
+- Secure encrypted thumbnails and metadata envelopes.
+
+Phase 4: Safety Numbers & Verification
+- Out-of-band cryptographic Safety Number / QR-code verification to detect
+  and prevent Man-In-The-Middle (MITM) attacks.
+
+Phase 5: Scalable Group Cryptography
+- Implementation of Sender Keys / Messaging Layer Security (MLS) tree-based
+  group ratchets to optimize multi-party end-to-end encryption.
+================================================================================

@@ -2,7 +2,6 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Check, CheckCheck, Lock, ShieldCheck, Trash2 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { EncryptedMessage, Message, User } from '../../types';
-import { Avatar } from '../common/Avatar';
 
 interface MessageListProps {
   messages: Message[];
@@ -33,7 +32,7 @@ export const MessageList: React.FC<MessageListProps> = ({
 
   const formatTimestamp = (iso: string) => {
     const d = new Date(iso);
-    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
   };
 
   const formatDateHeader = (iso: string) => {
@@ -42,39 +41,25 @@ export const MessageList: React.FC<MessageListProps> = ({
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
 
-    if (d.toDateString() === today.toDateString()) return 'Today';
-    if (d.toDateString() === yesterday.toDateString()) return 'Yesterday';
-    return d.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+    if (d.toDateString() === today.toDateString()) return 'TODAY';
+    if (d.toDateString() === yesterday.toDateString()) return 'YESTERDAY';
+    return d
+      .toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })
+      .toUpperCase();
   };
 
   if (isLoading) {
     return (
-      <div className="flex-1 flex items-center justify-center p-8">
+      <div className="flex-1 flex items-center justify-center p-8 bg-[#080A0F]">
         <div className="flex flex-col items-center gap-2">
-          <div className="w-5 h-5 border-2 border-neutral-300 dark:border-neutral-700 border-t-neutral-800 dark:border-t-neutral-200 rounded-full animate-spin" />
-          <span className="text-xs text-neutral-400 font-mono">Decrypting session messages...</span>
+          <div className="w-5 h-5 border-2 border-[#1E2638] border-t-[#00E599] rounded-full animate-spin" />
+          <span className="text-xs text-[#00E599] font-mono">Decrypting session stream...</span>
         </div>
       </div>
     );
   }
 
-  if (messages.length === 0) {
-    return (
-      <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
-        <div className="h-10 w-10 rounded-full bg-neutral-100 flex items-center justify-center mb-3 dark:bg-neutral-800">
-          <Lock className="h-4 w-4 text-neutral-400" />
-        </div>
-        <p className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
-          Encrypted Conversation Started
-        </p>
-        <p className="text-xs text-neutral-400 max-w-xs mt-1">
-          Messages in this conversation are end-to-end encrypted on your device before being transmitted.
-        </p>
-      </div>
-    );
-  }
-
-  // Sort messages strictly chronologically to ensure proper timeline and date grouping
+  // Sort messages strictly chronologically
   const sortedMessages = [...messages].sort(
     (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
   );
@@ -92,18 +77,41 @@ export const MessageList: React.FC<MessageListProps> = ({
   });
 
   return (
-    <div id="message-list-container" className="flex-1 overflow-y-auto p-4 space-y-6">
+    <div
+      id="message-list-container"
+      className="flex-1 overflow-y-auto px-4 py-5 space-y-6 bg-[#080A0F] select-text"
+    >
+      {/* Top Banner: Signal Protocol Double Ratchet Session Status */}
+      <div className="flex items-center justify-center">
+        <div className="inline-flex items-center gap-2 rounded-xl border border-[#00E599]/30 bg-[#0B281E]/40 px-3.5 py-1.5 text-[11px] font-mono text-[#00E599] shadow-xs max-w-xl text-center">
+          <Lock className="h-3.5 w-3.5 text-[#00E599] flex-shrink-0" />
+          <span>Session established with Signal Protocol Double Ratchet · Perfect forward secrecy active</span>
+        </div>
+      </div>
+
+      {messages.length === 0 && (
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <div className="h-10 w-10 rounded-xl bg-[#0D1118] border border-[#171D28] flex items-center justify-center mb-3">
+            <Lock className="h-4 w-4 text-[#00E599]" />
+          </div>
+          <p className="text-xs font-semibold text-white">Cryptographic Session Established</p>
+          <p className="text-[11px] font-mono text-slate-400 max-w-xs mt-1">
+            Zero-knowledge ratcheted channel active. All messages are encrypted with AES-256-GCM before transport.
+          </p>
+        </div>
+      )}
+
       {grouped.map((group, gIdx) => (
-        <div key={gIdx} className="space-y-3">
+        <div key={gIdx} className="space-y-4">
           {/* Date Divider */}
-          <div className="flex items-center justify-center">
-            <span className="rounded-full bg-neutral-100 px-3 py-1 text-[11px] font-medium text-neutral-500 dark:bg-neutral-800/80 dark:text-neutral-400">
+          <div className="flex items-center justify-center my-3">
+            <span className="font-mono text-[10px] tracking-widest text-slate-400 uppercase">
               {group.date}
             </span>
           </div>
 
           {/* Messages */}
-          <div className="space-y-2">
+          <div className="space-y-3">
             {group.items.map((msg) => {
               // Deterministic side resolution: strictly resolves whether the message belongs to current user
               const isMe = (() => {
@@ -120,8 +128,7 @@ export const MessageList: React.FC<MessageListProps> = ({
                   if (isSentByPeer) {
                     return false; // Definitely on peer's side (left)
                   }
-                  // Any message not from the peer in a direct conversation is from me (right)
-                  return true;
+                  return true; // Any message not from the peer in a direct conversation is from me (right)
                 }
 
                 // 2. Direct ID or username comparison
@@ -136,7 +143,7 @@ export const MessageList: React.FC<MessageListProps> = ({
                   return true;
                 }
 
-                // 3. Known seed alias mappings (user_rahul vs a1111111-1111-4111-a111-111111111111)
+                // 3. Known seed alias mappings
                 const isUserRahul =
                   currentUser.username === 'rahul123' ||
                   currentUser.id === 'user_rahul' ||
@@ -168,59 +175,68 @@ export const MessageList: React.FC<MessageListProps> = ({
                 return false;
               })();
 
+              const senderName = isMe
+                ? 'You'
+                : isGroup
+                ? msg.sender.displayName
+                : peerUser?.displayName || msg.sender.displayName;
+
               return (
                 <div
                   key={msg.id}
                   id={`message-bubble-${msg.id}`}
-                  className={`group flex items-end gap-2 ${isMe ? 'justify-end' : 'justify-start'}`}
+                  className={`group flex flex-col ${isMe ? 'items-end' : 'items-start'}`}
                 >
-                  {/* Avatar for received group messages */}
-                  {!isMe && isGroup && (
-                    <Avatar name={msg.sender.displayName} size="sm" className="mb-0.5" />
-                  )}
-
-                  {/* Message Bubble Container */}
-                  <div className={`relative max-w-[85%] sm:max-w-md ${isMe ? 'items-end' : 'items-start'}`}>
-                    {/* Sender name for group chats */}
-                    {!isMe && isGroup && (
-                      <span className="text-[11px] font-medium text-neutral-600 dark:text-neutral-400 ml-1 mb-0.5 block">
-                        {msg.sender.displayName}
-                      </span>
+                  {/* Top Label: Sender Name & Time */}
+                  <div
+                    className={`flex items-center gap-1.5 text-[10px] font-mono text-slate-400 mb-1 px-1 ${
+                      isMe ? 'text-right' : 'text-left'
+                    }`}
+                  >
+                    {!isMe ? (
+                      <>
+                        <span className="font-semibold text-white">{senderName}</span>
+                        <span>{formatTimestamp(msg.timestamp)}</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>{formatTimestamp(msg.timestamp)}</span>
+                        <span className="text-slate-400">You</span>
+                      </>
                     )}
+                  </div>
 
+                  {/* Message Bubble + Action Hover Container */}
+                  <div className="relative max-w-[85%] sm:max-w-md">
                     <div
-                      className={`relative rounded-2xl px-3.5 py-2 text-sm leading-relaxed transition-all shadow-xs ${
+                      className={`relative rounded-xl px-3.5 py-2 text-xs sm:text-sm leading-relaxed transition-all shadow-sm ${
                         isMe
-                          ? 'bg-neutral-900 text-neutral-50 rounded-br-xs dark:bg-neutral-100 dark:text-neutral-950'
-                          : 'bg-white text-neutral-900 border border-neutral-200/80 rounded-bl-xs dark:bg-neutral-900 dark:text-neutral-100 dark:border-neutral-800'
+                          ? 'bg-[#0D3829] text-emerald-100 border border-[#00E599]/25 rounded-tr-xs'
+                          : 'bg-[#131822] text-slate-100 border border-[#1E2638] rounded-tl-xs'
                       }`}
                     >
-                      {/* Plaintext (decrypted in memory only) */}
+                      {/* Decrypted plaintext */}
                       <p className="whitespace-pre-wrap break-words">{msg.plaintext}</p>
+                    </div>
 
-                      {/* Timestamp & Status Metadata */}
-                      <div
-                        className={`flex items-center justify-end gap-1 mt-1 text-[10px] font-mono ${
-                          isMe
-                            ? 'text-neutral-300 dark:text-neutral-500'
-                            : 'text-neutral-400 dark:text-neutral-500'
-                        }`}
-                      >
-                        <span>{formatTimestamp(msg.timestamp)}</span>
-
-                        {isMe && (
-                          <span title={`Status: ${msg.status}`}>
-                            {msg.status === 'sending' && (
-                              <div className="w-2.5 h-2.5 border-1 border-current border-t-transparent rounded-full animate-spin" />
-                            )}
-                            {msg.status === 'sent' && <Check className="h-3 w-3" />}
-                            {(msg.status === 'delivered' || msg.status === 'read') && (
-                              <CheckCheck className="h-3 w-3 text-emerald-400 dark:text-emerald-600" />
-                            )}
+                    {/* Delivery / Read Status below bubble for sent messages */}
+                    {isMe && (
+                      <div className="flex items-center justify-end gap-1 mt-1 text-[10px] font-mono text-[#00E599]">
+                        {msg.status === 'sending' ? (
+                          <div className="w-2.5 h-2.5 border-1 border-current border-t-transparent rounded-full animate-spin" />
+                        ) : msg.status === 'sent' ? (
+                          <span className="flex items-center gap-0.5">
+                            <span>Sent</span>
+                            <Check className="h-3 w-3" />
+                          </span>
+                        ) : (
+                          <span className="flex items-center gap-0.5 text-[#00E599]">
+                            <span>Delivered</span>
+                            <CheckCheck className="h-3 w-3" />
                           </span>
                         )}
                       </div>
-                    </div>
+                    )}
 
                     {/* Message Action Toolbar (Hover): Inspect & Delete */}
                     <div
@@ -231,8 +247,8 @@ export const MessageList: React.FC<MessageListProps> = ({
                       {msg.rawEnvelope && (
                         <button
                           onClick={() => onInspectEnvelope(msg.rawEnvelope!)}
-                          className="p-1.5 rounded-md text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
-                          title="Inspect E2EE wire envelope & ciphertext"
+                          className="p-1 rounded-md text-slate-400 hover:text-[#00E599] hover:bg-[#141B28] transition-colors"
+                          title="Inspect E2EE ciphertext"
                         >
                           <ShieldCheck className="h-3.5 w-3.5" />
                         </button>
@@ -241,7 +257,7 @@ export const MessageList: React.FC<MessageListProps> = ({
                       {onDeleteMessage && (
                         <button
                           onClick={() => setConfirmDeleteId(msg.id)}
-                          className="p-1.5 rounded-md text-neutral-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors"
+                          className="p-1 rounded-md text-slate-400 hover:text-red-400 hover:bg-red-950/40 transition-colors"
                           title="Delete message"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
@@ -258,41 +274,37 @@ export const MessageList: React.FC<MessageListProps> = ({
 
       {/* Typing indicator */}
       {typingUsers.length > 0 && (
-        <div className="flex items-center gap-2 text-xs text-neutral-500 dark:text-neutral-400 pl-2">
+        <div className="flex items-center gap-2 text-xs text-[#00E599] pl-1 font-mono">
           <div className="flex space-x-1">
-            <div className="w-1.5 h-1.5 bg-neutral-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-            <div className="w-1.5 h-1.5 bg-neutral-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-            <div className="w-1.5 h-1.5 bg-neutral-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+            <div className="w-1.5 h-1.5 bg-[#00E599] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+            <div className="w-1.5 h-1.5 bg-[#00E599] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+            <div className="w-1.5 h-1.5 bg-[#00E599] rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
           </div>
-          <span className="font-mono text-[11px]">{typingUsers.join(', ')} is typing...</span>
+          <span className="text-[11px]">{typingUsers.join(', ')} is typing...</span>
         </div>
       )}
 
       {/* Delete Confirmation Modal */}
       {confirmDeleteId && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-xs"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
           onClick={() => setConfirmDeleteId(null)}
         >
           <div
-            className="w-full max-w-sm rounded-xl border border-neutral-200 bg-white p-5 shadow-xl dark:border-neutral-800 dark:bg-neutral-900"
+            className="w-full max-w-sm rounded-xl border border-[#1E2638] bg-[#0D1118] p-5 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center gap-3 text-red-600 dark:text-red-400 mb-2">
-              <div className="p-2 rounded-full bg-red-100 dark:bg-red-950/50">
-                <Trash2 className="h-4 w-4" />
-              </div>
-              <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-                Delete Message?
-              </h3>
+            <div className="flex items-center gap-2.5 text-red-400 mb-2">
+              <Trash2 className="h-4 w-4" />
+              <h3 className="text-xs font-semibold text-white">Delete Encrypted Message?</h3>
             </div>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400 leading-relaxed mb-4">
-              This message will be permanently removed from this conversation.
+            <p className="text-[11px] text-slate-400 leading-relaxed mb-4">
+              This message will be permanently purged from the server and local ratchets.
             </p>
             <div className="flex justify-end gap-2">
               <button
                 onClick={() => setConfirmDeleteId(null)}
-                className="px-3 py-1.5 text-xs font-medium text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors"
+                className="px-3 py-1.5 text-xs text-slate-300 hover:text-white rounded-lg transition-colors"
               >
                 Cancel
               </button>
@@ -303,7 +315,7 @@ export const MessageList: React.FC<MessageListProps> = ({
                   }
                   setConfirmDeleteId(null);
                 }}
-                className="px-3 py-1.5 text-xs font-medium text-white bg-red-600 hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-700 rounded-lg transition-colors shadow-xs"
+                className="px-3 py-1.5 text-xs font-semibold text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
               >
                 Delete
               </button>

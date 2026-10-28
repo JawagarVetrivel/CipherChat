@@ -2,30 +2,29 @@
 
 @layer base {
   :root {
-    color-scheme: light;
+    color-scheme: dark;
   }
   .dark {
     color-scheme: dark;
   }
   body {
-    @apply bg-neutral-50 text-neutral-900 antialiased selection:bg-neutral-200 selection:text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100 dark:selection:bg-neutral-800;
+    @apply bg-[#080A0F] text-slate-100 antialiased selection:bg-[#00E599]/20 selection:text-[#00E599];
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
 }
 
-/* Restrained, clean scrollbar */
+/* Cyber cryptographic custom scrollbars */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: #090C10;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(156, 163, 175, 0.35);
+  background: #1B2333;
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(156, 163, 175, 0.6);
+  background: #00E599;
 }
-

@@ -18,7 +18,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     } catch {
       // ignore
     }
-    return 'light'; // Default to clean light neutral background
+    return 'dark'; // Default to cryptographic dark theme
   });
 
   useEffect(() => {

@@ -6,6 +6,7 @@ interface AvatarProps {
   size?: 'sm' | 'md' | 'lg' | 'xl';
   status?: 'online' | 'offline' | 'away';
   className?: string;
+  variant?: 'emerald' | 'slate' | 'neutral';
 }
 
 export const Avatar: React.FC<AvatarProps> = ({
@@ -14,33 +15,38 @@ export const Avatar: React.FC<AvatarProps> = ({
   size = 'md',
   status,
   className = '',
+  variant = 'emerald',
 }) => {
   const getInitials = (n: string) => {
-    if (!n) return '?';
+    if (!n) return '??';
     const parts = n.trim().split(/\s+/);
     if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
     return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
   };
 
   const sizeClasses = {
-    sm: 'w-7 h-7 text-xs',
-    md: 'w-9 h-9 text-xs font-medium',
-    lg: 'w-11 h-11 text-sm font-medium',
-    xl: 'w-16 h-16 text-lg font-medium',
+    sm: 'w-7 h-7 text-[11px] rounded-lg',
+    md: 'w-9 h-9 text-xs font-semibold rounded-lg',
+    lg: 'w-11 h-11 text-sm font-semibold rounded-xl',
+    xl: 'w-14 h-14 text-base font-bold rounded-xl',
   };
 
   const statusSizeClasses = {
     sm: 'w-2 h-2 ring-1',
-    md: 'w-2.5 h-2.5 ring-2',
+    md: 'w-2.5 h-2.5 ring-1.5',
     lg: 'w-3 h-3 ring-2',
-    xl: 'w-4 h-4 ring-2',
+    xl: 'w-3.5 h-3.5 ring-2',
   };
 
   const statusColorClasses = {
-    online: 'bg-emerald-500',
-    offline: 'bg-neutral-400',
-    away: 'bg-amber-500',
+    online: 'bg-[#00E599] shadow-[0_0_6px_#00E599]',
+    offline: 'bg-neutral-500',
+    away: 'bg-amber-400 shadow-[0_0_6px_#fbbf24]',
   };
+
+  // Color scheme variants based on name initials or explicit variant
+  const initials = getInitials(name);
+  const isEmerald = variant === 'emerald' || initials === 'PK' || initials === 'RS';
 
   return (
     <div className={`relative inline-flex flex-shrink-0 ${className}`}>
@@ -48,19 +54,23 @@ export const Avatar: React.FC<AvatarProps> = ({
         <img
           src={avatarUrl}
           alt={name}
-          className={`${sizeClasses[size]} rounded-full object-cover border border-neutral-200 dark:border-neutral-800`}
+          className={`${sizeClasses[size]} object-cover border border-[#1E2638]`}
         />
       ) : (
         <div
-          className={`${sizeClasses[size]} rounded-full bg-neutral-200 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 flex items-center justify-center font-mono border border-neutral-300/60 dark:border-neutral-700/60 select-none`}
+          className={`${sizeClasses[size]} ${
+            isEmerald
+              ? 'bg-[#0B281E] text-[#00E599] border border-[#00E599]/30'
+              : 'bg-[#141B28] text-slate-200 border border-[#212D42]'
+          } flex items-center justify-center font-mono select-none transition-all`}
         >
-          {getInitials(name)}
+          {initials}
         </div>
       )}
 
       {status && (
         <span
-          className={`absolute bottom-0 right-0 block rounded-full ring-white dark:ring-neutral-900 ${statusSizeClasses[size]} ${statusColorClasses[status]}`}
+          className={`absolute -top-0.5 -right-0.5 block rounded-full ring-[#0A0D12] ${statusSizeClasses[size]} ${statusColorClasses[status]}`}
           title={`Status: ${status}`}
         />
       )}

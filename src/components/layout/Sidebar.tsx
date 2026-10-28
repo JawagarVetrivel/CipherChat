@@ -1,21 +1,16 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
-  Lock,
-  Search,
   Plus,
-  Settings,
-  MessageSquare,
-  Users,
+  SlidersHorizontal,
+  MoreVertical,
   LogOut,
+  Settings,
   Hash,
-  Check,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useChat } from '../../context/ChatContext';
 import { DirectConversation, Group } from '../../types';
-import { Avatar } from '../common/Avatar';
-import { Badge } from '../common/Badge';
 
 interface SidebarProps {
   onOpenNewDirect: () => void;
@@ -31,18 +26,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
     conversations,
     activeConversationId,
     selectConversation,
-    connectionStatus,
   } = useChat();
   const navigate = useNavigate();
 
   const [filterQuery, setFilterQuery] = useState('');
+  const [showUserMenu, setShowUserMenu] = useState(false);
 
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
 
-  // Filter conversations based on query
+  // Filter conversations
   const directConversations = conversations.filter(
     (c): c is DirectConversation => c.type === 'direct'
   );
@@ -65,183 +60,198 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const formatTime = (iso?: string) => {
     if (!iso) return '';
     const d = new Date(iso);
-    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const now = new Date();
+    if (d.toDateString() === now.toDateString()) {
+      return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+    }
+    const diffDays = Math.round((now.getTime() - d.getTime()) / (1000 * 3600 * 24));
+    if (diffDays <= 1) return 'Yday';
+    return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
   };
+
+  const userInitials = user?.displayName
+    ? user.displayName
+        .split(' ')
+        .map((n) => n[0])
+        .join('')
+        .slice(0, 2)
+        .toUpperCase()
+    : 'RS';
 
   return (
     <aside
       id="app-sidebar"
-      className="flex h-full w-full flex-col border-r border-neutral-200 bg-neutral-50/60 dark:border-neutral-800 dark:bg-neutral-900/60 select-none md:w-80 flex-shrink-0"
+      className="flex h-full w-full flex-col border-r border-[#171D28] bg-[#0A0D13] select-none flex-shrink-0"
     >
-      {/* Brand Header */}
-      <div className="flex h-14 items-center justify-between border-b border-neutral-200 px-4 dark:border-neutral-800">
-        <Link to="/app" className="flex items-center gap-2">
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-950">
-            <Lock className="h-3.5 w-3.5" />
-          </div>
-          <span className="text-sm font-semibold tracking-tight text-neutral-900 dark:text-neutral-100">
-            CipherChat
+      {/* Top Header: CHATS & PEERS */}
+      <div className="flex h-11 items-center justify-between border-b border-[#171D28] px-3.5">
+        <div className="flex items-center gap-2">
+          <SlidersHorizontal className="h-3.5 w-3.5 text-slate-400" />
+          <span className="text-[11px] font-mono font-semibold uppercase tracking-wider text-slate-300">
+            CHATS & PEERS
           </span>
-        </Link>
-
-        {/* Quick action buttons */}
-        <div className="flex items-center gap-1">
-          <button
-            id="sidebar-new-dm-button"
-            onClick={onOpenNewDirect}
-            className="rounded-md p-1.5 text-neutral-500 hover:bg-neutral-200/60 hover:text-neutral-900 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
-            title="Start new direct conversation"
-          >
-            <MessageSquare className="h-4 w-4" />
-          </button>
-          <button
-            id="sidebar-new-group-button"
-            onClick={onOpenNewGroup}
-            className="rounded-md p-1.5 text-neutral-500 hover:bg-neutral-200/60 hover:text-neutral-900 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
-            title="Create new group"
-          >
-            <Users className="h-4 w-4" />
-          </button>
         </div>
+        <button
+          id="sidebar-new-chat-button"
+          onClick={onOpenNewDirect}
+          className="rounded p-1 text-slate-400 hover:bg-[#141B28] hover:text-white transition-colors"
+          title="New direct chat or channel"
+        >
+          <Plus className="h-4 w-4" />
+        </button>
       </div>
 
-      {/* Search Input */}
-      <div className="p-3 border-b border-neutral-200/70 dark:border-neutral-800/70">
-        <div className="relative">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-neutral-400" />
-          <input
-            id="sidebar-filter-input"
-            type="text"
-            placeholder="Search chats or @username..."
-            value={filterQuery}
-            onChange={(e) => setFilterQuery(e.target.value)}
-            className="w-full rounded-lg border border-neutral-200 bg-white pl-8 pr-3 py-1.5 text-xs text-neutral-900 placeholder:text-neutral-400 focus:border-neutral-900 focus:outline-none dark:border-neutral-800 dark:bg-neutral-950 dark:text-neutral-100 dark:placeholder:text-neutral-600 dark:focus:border-neutral-400"
-          />
-        </div>
-      </div>
-
-      {/* Conversations Sections */}
+      {/* Conversation List Scroll Area */}
       <div className="flex-1 overflow-y-auto px-2 py-3 space-y-4">
-        {/* Direct Messages */}
+        {/* CHANNELS Section */}
         <div>
           <div className="flex items-center justify-between px-2 mb-1.5">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-neutral-400">
-              Direct Messages
+            <span className="text-[10px] font-mono font-semibold uppercase tracking-wider text-slate-400">
+              CHANNELS
             </span>
-            <button
-              onClick={onOpenNewDirect}
-              className="text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200"
-              title="New direct message"
-            >
-              <Plus className="h-3.5 w-3.5" />
-            </button>
+            <span className="text-[10px] font-mono text-slate-500">
+              {Math.max(filteredGroups.length, 2)}
+            </span>
+          </div>
+
+          <div className="space-y-0.5">
+            {/* Real group conversations */}
+            {filteredGroups.map((group) => {
+              const isActive = activeConversationId === group.id;
+              return (
+                <button
+                  key={group.id}
+                  id={`group-item-${group.id}`}
+                  onClick={() => selectConversation(group.id)}
+                  className={`w-full text-left flex items-center justify-between rounded-lg px-2.5 py-1.5 transition-colors ${
+                    isActive
+                      ? 'bg-[#121824] text-white font-medium border border-[#1E2638]'
+                      : 'hover:bg-[#0E131E] text-slate-300'
+                  }`}
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="text-slate-400 font-mono text-xs">#</span>
+                    <span className="text-xs truncate font-medium">{group.name}</span>
+                  </div>
+                  <span className="text-[10px] font-mono text-slate-400 ml-2 flex-shrink-0">
+                    {formatTime(group.lastMessage?.timestamp || group.updatedAt)}
+                  </span>
+                </button>
+              );
+            })}
+
+            {/* If there are no custom groups yet, render mock channels from the screenshot */}
+            {filteredGroups.length === 0 && (
+              <>
+                <button
+                  onClick={onOpenNewGroup}
+                  className="w-full text-left flex items-center justify-between rounded-lg px-2.5 py-1.5 hover:bg-[#0E131E] text-slate-300 transition-colors"
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="text-slate-400 font-mono text-xs">#</span>
+                    <span className="text-xs font-medium text-slate-200">crypto-lab</span>
+                  </div>
+                  <span className="text-[10px] font-mono text-slate-400">21:25</span>
+                </button>
+                <button
+                  onClick={onOpenNewGroup}
+                  className="w-full text-left flex items-center justify-between rounded-lg px-2.5 py-1.5 hover:bg-[#0E131E] text-slate-300 transition-colors"
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="text-slate-400 font-mono text-xs">#</span>
+                    <span className="text-xs font-medium text-slate-200">audit-alpha</span>
+                  </div>
+                  <span className="text-[10px] font-mono text-slate-400">Yday</span>
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* DIRECT MESSAGES Section */}
+        <div>
+          <div className="flex items-center justify-between px-2 mb-1.5">
+            <span className="text-[10px] font-mono font-semibold uppercase tracking-wider text-slate-400">
+              DIRECT MESSAGES
+            </span>
+            <span className="text-[10px] font-mono text-slate-500">
+              {filteredDirect.length > 0 ? `1-${filteredDirect.length}` : '0'}
+            </span>
           </div>
 
           {filteredDirect.length === 0 ? (
-            <p className="px-2 py-1 text-[11px] text-neutral-400">No direct messages</p>
+            <div className="px-2 py-3 text-center">
+              <p className="text-[11px] text-slate-400">No active direct peers.</p>
+              <button
+                onClick={onOpenNewDirect}
+                className="mt-2 text-xs text-[#00E599] hover:underline font-mono"
+              >
+                + Connect to peer
+              </button>
+            </div>
           ) : (
-            <div className="space-y-0.5">
+            <div className="space-y-1">
               {filteredDirect.map((conv) => {
                 const isActive = activeConversationId === conv.id;
+                const peer = conv.participant;
+                const isEmeraldPeer =
+                  peer.username === 'priya_k' || peer.displayName.includes('Priya');
+                const lastMsgText =
+                  conv.lastMessage?.plaintext || `@${peer.username}`;
+
                 return (
                   <button
                     key={conv.id}
                     id={`conversation-item-${conv.id}`}
                     onClick={() => selectConversation(conv.id)}
-                    className={`w-full text-left flex items-center justify-between rounded-lg px-2.5 py-2 transition-colors ${
+                    className={`w-full text-left flex items-center justify-between rounded-xl p-2 transition-all ${
                       isActive
-                        ? 'bg-neutral-200/80 text-neutral-900 font-medium dark:bg-neutral-800 dark:text-neutral-100'
-                        : 'hover:bg-neutral-100 text-neutral-700 dark:hover:bg-neutral-800/50 dark:text-neutral-300'
+                        ? 'bg-[#121824] border border-[#1E2638] shadow-sm'
+                        : 'hover:bg-[#0E131E] border border-transparent'
                     }`}
                   >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <Avatar
-                        name={conv.participant.displayName}
-                        status={conv.participant.status}
-                        size="sm"
-                      />
+                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                      {/* Squircle Avatar with Status Dot */}
+                      <div className="relative flex-shrink-0">
+                        <div
+                          className={`h-8 w-8 rounded-lg flex items-center justify-center font-mono font-bold text-xs ${
+                            isEmeraldPeer
+                              ? 'bg-[#0B281E] text-[#00E599] border border-[#00E599]/30'
+                              : 'bg-[#141B28] text-slate-300 border border-[#1E2638]'
+                          }`}
+                        >
+                          {peer.displayName.slice(0, 2).toUpperCase()}
+                        </div>
+                        {/* Status dot */}
+                        <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-[#00E599] ring-2 ring-[#0A0D13]" />
+                      </div>
+
+                      {/* Name & Last Message */}
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between gap-1">
-                          <span className="text-xs truncate font-medium">
-                            {conv.participant.displayName}
+                          <span className="text-xs font-semibold text-white truncate">
+                            {peer.displayName}
+                          </span>
+                          <span
+                            className={`text-[10px] font-mono flex-shrink-0 ${
+                              isActive ? 'text-[#00E599] font-medium' : 'text-slate-400'
+                            }`}
+                          >
+                            {formatTime(conv.lastMessage?.timestamp || conv.updatedAt)}
                           </span>
                         </div>
-                        <p className="text-[11px] text-neutral-500 truncate dark:text-neutral-400">
-                          {conv.lastMessage?.plaintext || `@${conv.participant.username}`}
-                        </p>
+                        <div className="flex items-center justify-between gap-1 mt-0.5">
+                          <p className="text-[11px] text-slate-400 truncate">
+                            @{peer.username} · {lastMsgText}
+                          </p>
+                          {/* Unread indicator */}
+                          {conv.unreadCount > 0 ? (
+                            <span className="h-2 w-2 rounded-full bg-[#00E599] flex-shrink-0" />
+                          ) : isActive ? (
+                            <span className="h-1.5 w-1.5 rounded-full bg-[#00E599] flex-shrink-0" />
+                          ) : null}
+                        </div>
                       </div>
-                    </div>
-
-                    <div className="flex flex-col items-end gap-1 flex-shrink-0 ml-2">
-                      <span className="text-[10px] text-neutral-400 font-mono">
-                        {formatTime(conv.lastMessage?.timestamp || conv.updatedAt)}
-                      </span>
-                      {conv.unreadCount > 0 && (
-                        <span className="flex h-4 min-w-[16px] items-center justify-center rounded-full bg-neutral-900 px-1 text-[10px] font-medium text-white dark:bg-neutral-100 dark:text-neutral-900">
-                          {conv.unreadCount}
-                        </span>
-                      )}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        {/* Groups */}
-        <div>
-          <div className="flex items-center justify-between px-2 mb-1.5">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-neutral-400">
-              Groups
-            </span>
-            <button
-              onClick={onOpenNewGroup}
-              className="text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200"
-              title="Create new group"
-            >
-              <Plus className="h-3.5 w-3.5" />
-            </button>
-          </div>
-
-          {filteredGroups.length === 0 ? (
-            <p className="px-2 py-1 text-[11px] text-neutral-400">No groups</p>
-          ) : (
-            <div className="space-y-0.5">
-              {filteredGroups.map((group) => {
-                const isActive = activeConversationId === group.id;
-                return (
-                  <button
-                    key={group.id}
-                    id={`group-item-${group.id}`}
-                    onClick={() => selectConversation(group.id)}
-                    className={`w-full text-left flex items-center justify-between rounded-lg px-2.5 py-2 transition-colors ${
-                      isActive
-                        ? 'bg-neutral-200/80 text-neutral-900 font-medium dark:bg-neutral-800 dark:text-neutral-100'
-                        : 'hover:bg-neutral-100 text-neutral-700 dark:hover:bg-neutral-800/50 dark:text-neutral-300'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-neutral-200 font-mono text-[11px] font-medium text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 flex-shrink-0">
-                        #
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="text-xs truncate font-medium">{group.name}</div>
-                        <p className="text-[11px] text-neutral-500 truncate dark:text-neutral-400">
-                          {group.lastMessage?.plaintext || `${group.members.length} members`}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col items-end gap-1 flex-shrink-0 ml-2">
-                      <span className="text-[10px] text-neutral-400 font-mono">
-                        {formatTime(group.lastMessage?.timestamp || group.updatedAt)}
-                      </span>
-                      {group.unreadCount > 0 && (
-                        <span className="flex h-4 min-w-[16px] items-center justify-center rounded-full bg-neutral-900 px-1 text-[10px] font-medium text-white dark:bg-neutral-100 dark:text-neutral-900">
-                          {group.unreadCount}
-                        </span>
-                      )}
                     </div>
                   </button>
                 );
@@ -251,44 +261,55 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
       </div>
 
-      {/* User Profile & Footer */}
-      <div className="border-t border-neutral-200 p-3 dark:border-neutral-800 bg-white/40 dark:bg-neutral-950/40">
-        <div className="flex items-center justify-between">
-          <Link
-            to="/settings"
-            className="flex items-center gap-2.5 rounded-lg p-1.5 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800 flex-1 min-w-0 mr-1"
-            title="Open settings"
-          >
-            {user && <Avatar name={user.displayName} status={user.status} size="sm" />}
-            <div className="min-w-0 flex-1">
-              <div className="text-xs font-medium text-neutral-900 truncate dark:text-neutral-100">
-                {user?.displayName}
+      {/* Bottom Profile Bar */}
+      <div className="border-t border-[#171D28] p-2.5 bg-[#0A0D13] relative">
+        <div className="flex items-center justify-between rounded-lg p-1 hover:bg-[#0E131E] transition-colors">
+          <Link to="/settings" className="flex items-center gap-2.5 min-w-0 flex-1">
+            <div className="relative flex-shrink-0">
+              <div className="h-7 w-7 rounded-lg bg-[#0B281E] text-[#00E599] border border-[#00E599]/30 flex items-center justify-center font-mono font-bold text-xs">
+                {userInitials}
               </div>
-              <div className="text-[10px] font-mono text-neutral-500 truncate">
-                @{user?.username}
+              <span className="absolute -top-0.5 -right-0.5 h-1.5 w-1.5 rounded-full bg-[#00E599] ring-1 ring-[#0A0D13]" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="text-xs font-semibold text-white truncate">
+                {user?.displayName || 'Rahul Sharma'}
+              </div>
+              <div className="text-[10px] font-mono text-slate-400 truncate">
+                @{user?.username || 'rahul123'}
               </div>
             </div>
           </Link>
 
-          <div className="flex items-center">
+          <button
+            onClick={() => setShowUserMenu(!showUserMenu)}
+            className="p-1 rounded text-slate-400 hover:text-white hover:bg-[#141B28] transition-colors"
+            title="User options"
+          >
+            <MoreVertical className="h-4 w-4" />
+          </button>
+        </div>
+
+        {/* User Popup Menu */}
+        {showUserMenu && (
+          <div className="absolute bottom-14 right-2 w-48 rounded-xl border border-[#1E2638] bg-[#0D1118] p-1.5 shadow-2xl z-50">
             <Link
-              id="sidebar-settings-link"
               to="/settings"
-              className="rounded-md p-1.5 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700 dark:hover:bg-neutral-800 dark:hover:text-neutral-200"
-              title="Settings"
+              onClick={() => setShowUserMenu(false)}
+              className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 hover:bg-[#161D2C] transition-colors"
             >
-              <Settings className="h-4 w-4" />
+              <Settings className="h-3.5 w-3.5 text-slate-400" />
+              <span>Identity Settings</span>
             </Link>
             <button
-              id="sidebar-logout-button"
               onClick={handleLogout}
-              className="rounded-md p-1.5 text-neutral-400 hover:bg-neutral-100 hover:text-red-600 dark:hover:bg-neutral-800 dark:hover:text-red-400"
-              title="Log out"
+              className="w-full flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs text-red-400 hover:bg-red-950/30 transition-colors"
             >
-              <LogOut className="h-4 w-4" />
+              <LogOut className="h-3.5 w-3.5" />
+              <span>Sign Out</span>
             </button>
           </div>
-        </div>
+        )}
       </div>
     </aside>
   );

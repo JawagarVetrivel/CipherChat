@@ -14,7 +14,6 @@ import { useChat } from '../../context/ChatContext';
 import { userService } from '../../services/api/userService';
 import { Group, User } from '../../types';
 import { Avatar } from '../common/Avatar';
-import { Badge } from '../common/Badge';
 
 interface GroupDetailsDrawerProps {
   group: Group;
@@ -99,20 +98,20 @@ export const GroupDetailsDrawer: React.FC<GroupDetailsDrawerProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-40 flex justify-end bg-black/30 backdrop-blur-[1px]">
+    <div className="fixed inset-0 z-40 flex justify-end bg-black/60 backdrop-blur-sm select-none">
       <div
         id="group-details-drawer"
-        className="h-full w-full max-w-sm border-l border-neutral-200 bg-white shadow-xl flex flex-col dark:border-neutral-800 dark:bg-neutral-900 animate-in slide-in-from-right duration-200"
+        className="h-full w-full max-w-sm border-l border-[#171D28] bg-[#0A0D13] shadow-2xl flex flex-col"
       >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-neutral-200 px-5 py-4 dark:border-neutral-800">
-          <span className="text-xs font-semibold uppercase tracking-wider text-neutral-500">
-            Group Details
+        <div className="flex items-center justify-between border-b border-[#171D28] px-5 py-4 bg-[#0A0D13]">
+          <span className="text-[10px] font-mono font-semibold uppercase tracking-wider text-slate-400">
+            CHANNEL CONFIGURATION
           </span>
           <button
             id="close-group-details"
             onClick={onClose}
-            className="rounded-md p-1 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700 dark:hover:bg-neutral-800 dark:hover:text-neutral-200"
+            className="rounded p-1 text-slate-400 hover:bg-[#141B28] hover:text-white transition-colors"
           >
             <X className="h-4 w-4" />
           </button>
@@ -120,8 +119,8 @@ export const GroupDetailsDrawer: React.FC<GroupDetailsDrawerProps> = ({
 
         <div className="flex-1 overflow-y-auto p-5 space-y-6">
           {/* Group Identity Card */}
-          <div className="flex flex-col items-center text-center pb-4 border-b border-neutral-100 dark:border-neutral-800">
-            <div className="h-16 w-16 rounded-full bg-neutral-100 border border-neutral-200 flex items-center justify-center text-xl font-mono text-neutral-700 mb-3 dark:bg-neutral-800 dark:border-neutral-700 dark:text-neutral-300">
+          <div className="flex flex-col items-center text-center pb-4 border-b border-[#171D28]">
+            <div className="h-14 w-14 rounded-2xl bg-[#0B281E] border border-[#00E599]/30 flex items-center justify-center text-lg font-mono text-[#00E599] font-bold mb-3">
               {group.name.slice(0, 2).toUpperCase()}
             </div>
 
@@ -132,18 +131,18 @@ export const GroupDetailsDrawer: React.FC<GroupDetailsDrawerProps> = ({
                   value={editedName}
                   onChange={(e) => setEditedName(e.target.value)}
                   autoFocus
-                  className="rounded border border-neutral-300 px-2 py-1 text-sm font-medium text-neutral-900 dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-100"
+                  className="rounded border border-[#1E2638] bg-[#0D1118] px-2 py-1 text-xs text-white focus:border-[#00E599] focus:outline-none"
                 />
                 <button
                   onClick={handleSaveName}
-                  className="rounded bg-neutral-900 p-1 text-white hover:bg-neutral-800 dark:bg-white dark:text-neutral-900"
+                  className="rounded bg-[#00E599] p-1 text-[#051E14] hover:bg-[#00F5A3]"
                 >
                   <Check className="h-4 w-4" />
                 </button>
               </div>
             ) : (
               <div className="flex items-center gap-2">
-                <h3 className="text-base font-semibold text-neutral-900 dark:text-neutral-100">
+                <h3 className="text-sm font-semibold text-white">
                   {group.name}
                 </h3>
                 {isAdmin && (
@@ -152,8 +151,8 @@ export const GroupDetailsDrawer: React.FC<GroupDetailsDrawerProps> = ({
                       setEditedName(group.name);
                       setIsEditingName(true);
                     }}
-                    className="text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200"
-                    title="Edit group name"
+                    className="text-slate-500 hover:text-white"
+                    title="Edit channel name"
                   >
                     <Edit2 className="h-3.5 w-3.5" />
                   </button>
@@ -162,38 +161,42 @@ export const GroupDetailsDrawer: React.FC<GroupDetailsDrawerProps> = ({
             )}
 
             {group.description && (
-              <p className="text-xs text-neutral-500 mt-1 max-w-xs">{group.description}</p>
+              <p className="text-xs text-slate-400 mt-1 max-w-xs">{group.description}</p>
             )}
 
             <div className="mt-3 flex items-center gap-2">
-              <Badge variant="neutral">{group.members.length} members</Badge>
-              <Badge variant="success">E2EE Group Protocol Ready</Badge>
+              <span className="text-[10px] font-mono text-slate-300 bg-[#121824] px-2 py-0.5 rounded border border-[#1E2638]">
+                {group.members.length} peers
+              </span>
+              <span className="text-[10px] font-mono text-[#00E599] bg-[#0B281E] border border-[#00E599]/30 px-2 py-0.5 rounded">
+                TreeKEM Ready
+              </span>
             </div>
           </div>
 
           {/* Members Section */}
           <div>
             <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
-                Members ({group.members.length})
+              <span className="text-xs font-semibold text-slate-200">
+                Peers ({group.members.length})
               </span>
               {isAdmin && !isAddingMember && (
                 <button
                   onClick={() => setIsAddingMember(true)}
-                  className="inline-flex items-center gap-1 text-xs font-medium text-neutral-900 hover:underline dark:text-neutral-100"
+                  className="inline-flex items-center gap-1 text-xs font-mono text-[#00E599] hover:underline"
                 >
                   <UserPlus className="h-3 w-3" />
-                  <span>Add</span>
+                  <span>+ Add</span>
                 </button>
               )}
             </div>
 
             {/* Add Member inline form */}
             {isAddingMember && (
-              <div className="mb-3 rounded-lg border border-neutral-200 bg-neutral-50 p-2.5 dark:border-neutral-800 dark:bg-neutral-950">
+              <div className="mb-3 rounded-xl border border-[#171D28] bg-[#0D1118] p-3">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-[11px] font-medium text-neutral-600 dark:text-neutral-400">
-                    Add member by @username
+                  <span className="text-[11px] font-mono text-slate-400">
+                    Add peer by @handle
                   </span>
                   <button
                     onClick={() => {
@@ -201,20 +204,20 @@ export const GroupDetailsDrawer: React.FC<GroupDetailsDrawerProps> = ({
                       setAddSearchQuery('');
                       setAddSearchResults([]);
                     }}
-                    className="text-neutral-400 hover:text-neutral-600"
+                    className="text-slate-400 hover:text-white"
                   >
                     <X className="h-3 w-3" />
                   </button>
                 </div>
                 <div className="relative mb-2">
-                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-neutral-400" />
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-500" />
                   <input
                     type="text"
                     placeholder="Type @username..."
                     value={addSearchQuery}
                     onChange={(e) => handleSearchUsers(e.target.value)}
                     autoFocus
-                    className="w-full rounded border border-neutral-200 bg-white pl-8 pr-2 py-1 text-xs text-neutral-900 focus:outline-none dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
+                    className="w-full rounded border border-[#1E2638] bg-[#0A0D13] pl-8 pr-2 py-1 text-xs text-white focus:border-[#00E599] focus:outline-none font-mono"
                   />
                 </div>
                 {addSearchResults.length > 0 && (
@@ -222,17 +225,17 @@ export const GroupDetailsDrawer: React.FC<GroupDetailsDrawerProps> = ({
                     {addSearchResults.map((u) => (
                       <div
                         key={u.id}
-                        className="flex items-center justify-between rounded p-1.5 hover:bg-neutral-200/60 dark:hover:bg-neutral-800"
+                        className="flex items-center justify-between rounded p-1.5 hover:bg-[#141B28]"
                       >
                         <div className="flex items-center gap-2">
                           <Avatar name={u.displayName} size="sm" />
-                          <span className="text-xs text-neutral-800 dark:text-neutral-200">
+                          <span className="text-xs font-mono text-slate-300">
                             @{u.username}
                           </span>
                         </div>
                         <button
                           onClick={() => handleAddMember(u)}
-                          className="rounded bg-neutral-900 px-2 py-0.5 text-[11px] font-medium text-white hover:bg-neutral-800 dark:bg-white dark:text-neutral-900"
+                          className="rounded bg-[#00E599] px-2 py-0.5 text-[11px] font-bold text-[#051E14] hover:bg-[#00F5A3]"
                         >
                           Add
                         </button>
@@ -244,31 +247,31 @@ export const GroupDetailsDrawer: React.FC<GroupDetailsDrawerProps> = ({
             )}
 
             {/* Member List */}
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               {group.members.map((m) => {
                 const isSelf = m.userId === currentUser?.id;
                 return (
                   <div
                     key={m.userId}
-                    className="flex items-center justify-between rounded-lg p-2 hover:bg-neutral-50 dark:hover:bg-neutral-800/40"
+                    className="flex items-center justify-between rounded-lg p-2 hover:bg-[#0D1118] border border-transparent hover:border-[#171D28] transition-colors"
                   >
                     <div className="flex items-center gap-2.5">
                       <Avatar name={m.user.displayName} status={m.user.status} size="sm" />
                       <div>
                         <div className="flex items-center gap-1.5">
-                          <span className="text-xs font-medium text-neutral-900 dark:text-neutral-100">
+                          <span className="text-xs font-medium text-white">
                             {m.user.displayName}
                           </span>
-                          {isSelf && <span className="text-[10px] text-neutral-400">(You)</span>}
+                          {isSelf && <span className="text-[10px] text-slate-500 font-mono">(You)</span>}
                         </div>
                         <div className="flex items-center gap-1.5">
-                          <span className="text-[11px] font-mono text-neutral-500">
+                          <span className="text-[11px] font-mono text-slate-400">
                             @{m.user.username}
                           </span>
                           {m.role === 'admin' && (
-                            <Badge variant="accent" size="sm">
+                            <span className="text-[9px] font-mono text-[#00E599] bg-[#0B281E] px-1 rounded border border-[#00E599]/30">
                               Admin
-                            </Badge>
+                            </span>
                           )}
                         </div>
                       </div>
@@ -277,7 +280,7 @@ export const GroupDetailsDrawer: React.FC<GroupDetailsDrawerProps> = ({
                     {isAdmin && !isSelf && (
                       <button
                         onClick={() => handleRemoveMember(m.userId)}
-                        className="rounded p-1 text-neutral-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40 dark:hover:text-red-400"
+                        className="rounded p-1 text-slate-500 hover:text-red-400 hover:bg-red-950/30 transition-colors"
                         title="Remove member"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
@@ -290,10 +293,10 @@ export const GroupDetailsDrawer: React.FC<GroupDetailsDrawerProps> = ({
           </div>
 
           {/* Cryptography notice */}
-          <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-3 text-xs text-neutral-600 dark:border-neutral-800 dark:bg-neutral-950/60 dark:text-neutral-400">
-            <div className="flex items-center gap-1.5 font-medium text-neutral-900 dark:text-neutral-200 mb-1">
-              <Shield className="h-3.5 w-3.5 text-neutral-700 dark:text-neutral-300" />
-              <span>Group Key Management</span>
+          <div className="rounded-xl border border-[#171D28] bg-[#0D1118] p-3 text-xs text-slate-400">
+            <div className="flex items-center gap-1.5 font-medium text-[#00E599] mb-1 font-mono">
+              <Shield className="h-3.5 w-3.5" />
+              <span>Channel Key Rotation</span>
             </div>
             <p className="text-[11px] leading-relaxed">
               Designed for Sender Keys / TreeKEM group ratchet protocols. Group member changes will
@@ -303,13 +306,13 @@ export const GroupDetailsDrawer: React.FC<GroupDetailsDrawerProps> = ({
         </div>
 
         {/* Footer Actions */}
-        <div className="border-t border-neutral-200 p-4 dark:border-neutral-800">
+        <div className="border-t border-[#171D28] p-4 bg-[#0A0D13]">
           <button
             onClick={handleLeave}
-            className="w-full flex items-center justify-center gap-2 rounded-lg border border-red-200 bg-red-50/50 py-2 text-xs font-medium text-red-600 hover:bg-red-100 dark:border-red-900/50 dark:bg-red-950/20 dark:text-red-400 dark:hover:bg-red-950/40"
+            className="w-full flex items-center justify-center gap-2 rounded-lg border border-red-900/50 bg-red-950/20 py-2 text-xs font-medium text-red-400 hover:bg-red-950/40 transition-colors"
           >
             <LogOut className="h-3.5 w-3.5" />
-            <span>Leave Group</span>
+            <span>Leave Channel</span>
           </button>
         </div>
       </div>

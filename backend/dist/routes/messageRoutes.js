@@ -7,5 +7,7 @@ const router = (0, express_1.Router)();
 router.use(authMiddleware_js_1.authenticateToken);
 // Send message to conversation
 router.post('/', (0, authMiddleware_js_1.requireConversationMember)('conversationId'), (req, res, next) => messageController_js_1.messageController.sendMessage(req, res, next));
+// Delete message
+router.delete('/:id', (req, res, next) => messageController_js_1.messageController.deleteMessage(req, res, next));
 exports.default = router;
 //# sourceMappingURL=messageRoutes.js.map

@@ -10,10 +10,10 @@ import { GroupDetailsDrawer } from '../components/modals/GroupDetailsDrawer';
 import { NewDirectChatModal } from '../components/modals/NewDirectChatModal';
 import { NewGroupModal } from '../components/modals/NewGroupModal';
 import { useChat } from '../context/ChatContext';
-import { EncryptedMessage, Group } from '../types';
+import { DirectConversation, EncryptedMessage, Group } from '../types';
 
 export const ChatPage: React.FC = () => {
-  const { activeConversation, messages, isLoadingMessages, typingUsers } = useChat();
+  const { activeConversation, messages, isLoadingMessages, typingUsers, deleteMessage } = useChat();
 
   const [isGroupDetailsOpen, setIsGroupDetailsOpen] = useState(false);
   const [inspectedEnvelope, setInspectedEnvelope] = useState<EncryptedMessage | null>(null);
@@ -44,8 +44,14 @@ export const ChatPage: React.FC = () => {
               messages={messages}
               isLoading={isLoadingMessages}
               isGroup={activeConversation.type === 'group'}
+              peerUser={
+                activeConversation.type === 'direct'
+                  ? (activeConversation as DirectConversation).participant
+                  : undefined
+              }
               typingUsers={typingUsers}
               onInspectEnvelope={(env) => setInspectedEnvelope(env)}
+              onDeleteMessage={(msgId) => deleteMessage(msgId)}
             />
 
             {/* Message Input */}

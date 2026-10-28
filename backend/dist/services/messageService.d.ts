@@ -27,5 +27,9 @@ export declare class MessageService {
      * Retrieves pending encrypted messages for a user when they reconnect.
      */
     getPendingOfflineMessages(userId: string): Promise<EncryptedMessage[]>;
+    /**
+     * Deletes an encrypted message envelope from persistent storage.
+     */
+    deleteMessage(messageId: string, requestingUserId: string): Promise<boolean>;
 }
 export declare const messageService: MessageService;

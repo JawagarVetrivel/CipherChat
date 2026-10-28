@@ -37,6 +37,7 @@ class ChatService {
   private decryptedMessageCache: Map<string, Message> = new Map();
   private currentUserId: string | null = null;
   private messageListeners: Set<(message: Message) => void> = new Set();
+  private messageDeleteListeners: Set<(messageId: string, conversationId: string) => void> = new Set();
   private conversationUpdateListeners: Set<(conversations: Conversation[]) => void> = new Set();
 
   constructor() {
@@ -301,6 +302,21 @@ class ChatService {
         msg.status = delivery.status;
         this.persistData();
       }
+    });
+
+    wsClient.onDelete(({ messageId, conversationId }) => {
+      this.encryptedMessages = this.encryptedMessages.filter(m => m.id !== messageId);
+      this.decryptedMessageCache.delete(messageId);
+
+      const conv = this.conversations.find(c => c.id === conversationId);
+      if (conv && conv.lastMessage?.id === messageId) {
+        const remaining = this.getCachedMessages(conversationId);
+        conv.lastMessage = remaining.length > 0 ? remaining[remaining.length - 1] : undefined;
+        this.persistData();
+        this.emitConversations();
+      }
+
+      this.messageDeleteListeners.forEach(cb => cb(messageId, conversationId));
     });
   }
 
@@ -861,9 +877,53 @@ class ChatService {
     return () => this.messageListeners.delete(callback);
   }
 
+  public onMessageDeleted(callback: (messageId: string, conversationId: string) => void): () => void {
+    this.messageDeleteListeners.add(callback);
+    return () => this.messageDeleteListeners.delete(callback);
+  }
+
   public onConversationsChange(callback: (convs: Conversation[]) => void): () => void {
     this.conversationUpdateListeners.add(callback);
     return () => this.conversationUpdateListeners.delete(callback);
+  }
+
+  /**
+   * Delete a message locally and broadcast/persist deletion to peers and backend.
+   */
+  public async deleteMessage(messageId: string, conversationId: string): Promise<void> {
+    // 1. Remove from local caches
+    this.encryptedMessages = this.encryptedMessages.filter((m) => m.id !== messageId);
+    this.decryptedMessageCache.delete(messageId);
+
+    // 2. Update conversation lastMessage
+    const conv = this.conversations.find((c) => c.id === conversationId);
+    if (conv && conv.lastMessage?.id === messageId) {
+      const remaining = this.getCachedMessages(conversationId);
+      conv.lastMessage = remaining.length > 0 ? remaining[remaining.length - 1] : undefined;
+    }
+
+    this.persistData();
+    this.emitConversations();
+
+    // 3. Notify local listeners
+    this.messageDeleteListeners.forEach((cb) => cb(messageId, conversationId));
+
+    // 4. Dispatch WebSocket deletion event across real-time wire
+    wsClient.sendDeleteMessage(messageId, conversationId);
+
+    // 5. Delete on backend API if available
+    const apiBase = getApiBaseUrl();
+    if (apiBase) {
+      const session = authService.getCurrentSession();
+      if (session) {
+        fetch(`${apiBase}/messages/${messageId}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${session.token}` },
+        }).catch((err) => {
+          console.warn('Failed to delete message via REST:', err);
+        });
+      }
+    }
   }
 }
 

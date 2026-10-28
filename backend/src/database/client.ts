@@ -334,6 +334,23 @@ class DatabaseStore {
     return msg;
   }
 
+  public async getMessageById(messageId: string): Promise<EncryptedMessage | null> {
+    await this.init();
+    return this.messages.get(messageId) || null;
+  }
+
+  public async deleteMessage(messageId: string): Promise<boolean> {
+    await this.init();
+    if (supabaseClient) {
+      try {
+        await supabaseClient.from('messages').delete().eq('id', messageId);
+      } catch (err) {
+        logger.error('Failed to delete message from Supabase', { messageId, error: String(err) });
+      }
+    }
+    return this.messages.delete(messageId);
+  }
+
   public async getPendingMessagesForUser(userId: string): Promise<EncryptedMessage[]> {
     await this.init();
     const userConvs = await this.getConversationsForUser(userId);

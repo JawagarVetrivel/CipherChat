@@ -286,6 +286,25 @@ async function handleIncomingEvent(ws, event) {
             }
             break;
         }
+        case 'message.delete': {
+            const payload = event.payload;
+            if (!payload || !payload.messageId || !payload.conversationId)
+                return;
+            try {
+                await messageService_js_1.messageService.deleteMessage(payload.messageId, userId);
+            }
+            catch (err) {
+                logger_js_1.logger.warn('Failed deleting message from backend:', { error: String(err) });
+            }
+            await wsManager_js_1.wsManager.broadcastToConversation(payload.conversationId, {
+                type: 'message.delete',
+                payload: {
+                    messageId: payload.messageId,
+                    conversationId: payload.conversationId,
+                },
+            });
+            break;
+        }
         default:
             logger_js_1.logger.debug(`Unhandled WebSocket event type: ${event.type}`);
             break;

@@ -39,6 +39,17 @@ class MessageController {
             next(err);
         }
     }
+    async deleteMessage(req, res, next) {
+        try {
+            const { id } = req.params;
+            const requestingUserId = req.user.id;
+            await messageService_js_1.messageService.deleteMessage(id, requestingUserId);
+            res.status(200).json({ success: true, messageId: id });
+        }
+        catch (err) {
+            next(err);
+        }
+    }
 }
 exports.MessageController = MessageController;
 exports.messageController = new MessageController();

@@ -53,6 +53,17 @@ class MessageService {
     async getPendingOfflineMessages(userId) {
         return client_js_1.db.getPendingMessagesForUser(userId);
     }
+    /**
+     * Deletes an encrypted message envelope from persistent storage.
+     */
+    async deleteMessage(messageId, requestingUserId) {
+        const msg = await client_js_1.db.getMessageById(messageId);
+        if (!msg) {
+            return true;
+        }
+        logger_js_1.logger.info(`Message [${messageId}] deleted by user [${requestingUserId}]`);
+        return client_js_1.db.deleteMessage(messageId);
+    }
 }
 exports.MessageService = MessageService;
 exports.messageService = new MessageService();

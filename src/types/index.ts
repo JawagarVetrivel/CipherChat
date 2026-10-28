@@ -98,7 +98,7 @@ export interface Message {
 }
 
 export interface WebSocketEvent<T = unknown> {
-  type: 'message' | 'typing' | 'presence' | 'delivery' | 'error' | 'connected';
+  type: 'message' | 'message.delete' | 'typing' | 'presence' | 'delivery' | 'error' | 'connected';
   payload: T;
 }
 

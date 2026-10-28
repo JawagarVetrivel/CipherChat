@@ -69,6 +69,18 @@ export class MessageService {
   public async getPendingOfflineMessages(userId: string): Promise<EncryptedMessage[]> {
     return db.getPendingMessagesForUser(userId);
   }
+
+  /**
+   * Deletes an encrypted message envelope from persistent storage.
+   */
+  public async deleteMessage(messageId: string, requestingUserId: string): Promise<boolean> {
+    const msg = await db.getMessageById(messageId);
+    if (!msg) {
+      return true;
+    }
+    logger.info(`Message [${messageId}] deleted by user [${requestingUserId}]`);
+    return db.deleteMessage(messageId);
+  }
 }
 
 export const messageService = new MessageService();

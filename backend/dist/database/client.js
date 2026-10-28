@@ -321,6 +321,22 @@ class DatabaseStore {
         msg.status = status;
         return msg;
     }
+    async getMessageById(messageId) {
+        await this.init();
+        return this.messages.get(messageId) || null;
+    }
+    async deleteMessage(messageId) {
+        await this.init();
+        if (supabaseClient) {
+            try {
+                await supabaseClient.from('messages').delete().eq('id', messageId);
+            }
+            catch (err) {
+                logger_js_1.logger.error('Failed to delete message from Supabase', { messageId, error: String(err) });
+            }
+        }
+        return this.messages.delete(messageId);
+    }
     async getPendingMessagesForUser(userId) {
         await this.init();
         const userConvs = await this.getConversationsForUser(userId);

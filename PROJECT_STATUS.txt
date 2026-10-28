@@ -44,6 +44,10 @@ Completed Features & Current Capabilities:
     - In-memory contact cache with request deduplication eliminates sequential round-trip fetches.
     - Parallel message decryption & concurrent envelope processing via Promise.all.
     - 0ms cached message rendering removes the blocking "Decrypting session messages..." spinner.
+[x] Real-Time Message Deletion & Deterministic Side Alignment
+    - Real-time message deletion across WebSockets, REST API, and local storage caches.
+    - Interactive hover action toolbar with Trash icon and deletion confirmation modal.
+    - Robust peer/sender side determination ensures messages permanently remain on the correct side (right for sender, left for receiver).
 [x] Full-Duplex Real-Time WebSocket Transport
     - Instant messaging, typing indicators, and presence updates (online/away/offline).
 [x] Zero-Knowledge Server Relay

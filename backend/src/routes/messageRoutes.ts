@@ -11,4 +11,9 @@ router.post('/', requireConversationMember('conversationId'), (req, res, next) =
   messageController.sendMessage(req, res, next)
 );
 
+// Delete message
+router.delete('/:id', (req, res, next) =>
+  messageController.deleteMessage(req, res, next)
+);
+
 export default router;

@@ -28,6 +28,8 @@ declare class DatabaseStore {
     getMessagesByConversation(conversationId: string): Promise<EncryptedMessage[]>;
     saveMessage(message: EncryptedMessage): Promise<EncryptedMessage>;
     updateMessageStatus(messageId: string, status: EncryptedMessage['deliveryStatus']): Promise<EncryptedMessage | null>;
+    getMessageById(messageId: string): Promise<EncryptedMessage | null>;
+    deleteMessage(messageId: string): Promise<boolean>;
     getPendingMessagesForUser(userId: string): Promise<EncryptedMessage[]>;
     savePublicKey(key: PublicKeyRecord): Promise<PublicKeyRecord>;
     getPublicKeysForUser(userId: string): Promise<PublicKeyRecord[]>;

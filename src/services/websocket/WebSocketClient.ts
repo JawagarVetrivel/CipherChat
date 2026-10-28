@@ -39,6 +39,7 @@ export class WebSocketClient {
 
   // Listeners
   private messageListeners: Set<EventCallback<EncryptedMessage>> = new Set();
+  private deleteListeners: Set<EventCallback<{ messageId: string; conversationId: string }>> = new Set();
   private typingListeners: Set<EventCallback<TypingEventPayload>> = new Set();
   private presenceListeners: Set<EventCallback<PresenceEventPayload>> = new Set();
   private deliveryListeners: Set<EventCallback<DeliveryEventPayload>> = new Set();
@@ -255,6 +256,22 @@ export class WebSocketClient {
   }
 
   /**
+   * Sends message deletion event.
+   */
+  public sendDeleteMessage(messageId: string, conversationId: string): void {
+    const payload: WebSocketEvent<{ messageId: string; conversationId: string }> = {
+      type: 'message.delete',
+      payload: { messageId, conversationId },
+    };
+
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      this.ws.send(JSON.stringify(payload));
+    } else {
+      this.emitDelete({ messageId, conversationId });
+    }
+  }
+
+  /**
    * Parses raw messages from the network wire.
    */
   private handleIncomingRawMessage(rawData: string): void {
@@ -264,6 +281,9 @@ export class WebSocketClient {
       switch (event.type) {
         case 'message':
           this.emitMessage(event.payload as EncryptedMessage);
+          break;
+        case 'message.delete':
+          this.emitDelete(event.payload as { messageId: string; conversationId: string });
           break;
         case 'typing':
           this.emitTyping(event.payload as TypingEventPayload);
@@ -288,6 +308,10 @@ export class WebSocketClient {
     this.messageListeners.forEach(cb => cb(message));
   }
 
+  public emitDelete(data: { messageId: string; conversationId: string }): void {
+    this.deleteListeners.forEach(cb => cb(data));
+  }
+
   public emitTyping(typing: TypingEventPayload): void {
     this.typingListeners.forEach(cb => cb(typing));
   }
@@ -305,6 +329,11 @@ export class WebSocketClient {
   public onMessage(callback: EventCallback<EncryptedMessage>): () => void {
     this.messageListeners.add(callback);
     return () => this.messageListeners.delete(callback);
+  }
+
+  public onDelete(callback: EventCallback<{ messageId: string; conversationId: string }>): () => void {
+    this.deleteListeners.add(callback);
+    return () => this.deleteListeners.delete(callback);
   }
 
   public onTyping(callback: EventCallback<TypingEventPayload>): () => void {

@@ -20,7 +20,7 @@ export interface LoginPayload {
 // Default pre-seeded users for local development and demonstration
 const DEFAULT_USERS: Array<User & { passwordHash: string; email: string }> = [
   {
-    id: 'user_rahul',
+    id: 'a1111111-1111-4111-a111-111111111111',
     username: 'rahul123',
     displayName: 'Rahul Sharma',
     email: 'rahul@university.edu',
@@ -30,7 +30,7 @@ const DEFAULT_USERS: Array<User & { passwordHash: string; email: string }> = [
     avatarUrl: '',
   },
   {
-    id: 'user_priya',
+    id: 'b2222222-2222-4222-b222-222222222222',
     username: 'priya_k',
     displayName: 'Priya Kapoor',
     email: 'priya@university.edu',
@@ -40,7 +40,7 @@ const DEFAULT_USERS: Array<User & { passwordHash: string; email: string }> = [
     avatarUrl: '',
   },
   {
-    id: 'user_prof',
+    id: 'c3333333-3333-4333-c333-333333333333',
     username: 'crypto_prof',
     displayName: 'Prof. Alan Vance',
     email: 'vance@university.edu',
@@ -50,7 +50,7 @@ const DEFAULT_USERS: Array<User & { passwordHash: string; email: string }> = [
     avatarUrl: '',
   },
   {
-    id: 'user_alex',
+    id: 'd4444444-4444-4444-d444-444444444444',
     username: 'alex_c',
     displayName: 'Alex Chen',
     email: 'alex@university.edu',
@@ -89,6 +89,13 @@ class AuthService {
       const stored = localStorage.getItem(STORAGE_USERS_KEY);
       if (stored) {
         this.users = JSON.parse(stored);
+        // Self-heal: ensure known seed accounts map to their canonical UUIDs
+        for (const u of this.users) {
+          if (u.username === 'rahul123' && u.id === 'user_rahul') u.id = 'a1111111-1111-4111-a111-111111111111';
+          if (u.username === 'priya_k' && u.id === 'user_priya') u.id = 'b2222222-2222-4222-b222-222222222222';
+          if (u.username === 'crypto_prof' && u.id === 'user_prof') u.id = 'c3333333-3333-4333-c333-333333333333';
+          if (u.username === 'alex_c' && u.id === 'user_alex') u.id = 'd4444444-4444-4444-d444-444444444444';
+        }
       } else {
         this.users = [...DEFAULT_USERS];
         this.saveUsers();
@@ -219,7 +226,15 @@ class AuthService {
     try {
       const stored = localStorage.getItem(STORAGE_SESSION_KEY);
       if (stored) {
-        return JSON.parse(stored);
+        const session: AuthResponse = JSON.parse(stored);
+        if (session.user) {
+          if (session.user.username === 'rahul123' && session.user.id === 'user_rahul') {
+            session.user.id = 'a1111111-1111-4111-a111-111111111111';
+          } else if (session.user.username === 'priya_k' && session.user.id === 'user_priya') {
+            session.user.id = 'b2222222-2222-4222-b222-222222222222';
+          }
+        }
+        return session;
       }
     } catch {
       return null;

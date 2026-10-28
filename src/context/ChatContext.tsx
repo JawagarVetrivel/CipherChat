@@ -16,6 +16,7 @@ interface ChatContextType {
   typingUsers: string[]; // usernames typing in active conversation
   selectConversation: (id: string | null) => void;
   sendMessage: (plaintext: string) => Promise<void>;
+  deleteMessage: (messageId: string) => Promise<void>;
   sendTyping: (isTyping: boolean) => void;
   startDirectConversation: (peerUser: Omit<User, 'email'>) => Promise<DirectConversation>;
   createGroup: (name: string, members: Array<Omit<User, 'email'>>, description?: string) => Promise<Group>;
@@ -122,8 +123,15 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     });
 
+    const unsubscribeDelete = chatService.onMessageDeleted((messageId, conversationId) => {
+      if (conversationId === activeConversationIdRef.current) {
+        setMessages((prev) => prev.filter((m) => m.id !== messageId));
+      }
+    });
+
     return () => {
       unsubscribeNewMsg();
+      unsubscribeDelete();
     };
   }, []);
 
@@ -192,6 +200,20 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     },
     [activeConversationId, isSending]
+  );
+
+  const deleteMessage = useCallback(
+    async (messageId: string) => {
+      if (!activeConversationId) return;
+      // Optimistically remove from state
+      setMessages((prev) => prev.filter((m) => m.id !== messageId));
+      try {
+        await chatService.deleteMessage(messageId, activeConversationId);
+      } catch (err) {
+        console.error('Failed to delete message:', err);
+      }
+    },
+    [activeConversationId]
   );
 
   const sendTyping = useCallback(
@@ -276,6 +298,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
         typingUsers: typingUsernames,
         selectConversation,
         sendMessage,
+        deleteMessage,
         sendTyping,
         startDirectConversation,
         createGroup,

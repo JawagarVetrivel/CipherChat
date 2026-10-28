@@ -350,6 +350,29 @@ async function handleIncomingEvent(ws: AuthenticatedWebSocket, event: WebSocketE
       break;
     }
 
+    case 'message.delete': {
+      const payload = event.payload as { messageId: string; conversationId: string };
+      if (!payload || !payload.messageId || !payload.conversationId) return;
+
+      try {
+        await messageService.deleteMessage(payload.messageId, userId);
+      } catch (err) {
+        logger.warn('Failed deleting message from backend:', { error: String(err) });
+      }
+
+      await wsManager.broadcastToConversation(
+        payload.conversationId,
+        {
+          type: 'message.delete',
+          payload: {
+            messageId: payload.messageId,
+            conversationId: payload.conversationId,
+          },
+        }
+      );
+      break;
+    }
+
     default:
       logger.debug(`Unhandled WebSocket event type: ${event.type}`);
       break;

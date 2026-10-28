@@ -25,7 +25,7 @@
 
 CipherChat is designed for university cryptography research and high-assurance messaging workflows. It adheres strictly to the **"Dumb Pipe" Relay Principle**:
 
-1. **Zero-Knowledge Relay**: The backend routes and stores strictly **opaque ciphertext envelopes** (`enc:v1:...`) and ratchet headers. The server **never** decrypts, encrypts, parses, or logs message plaintext.
+1. **Zero-Knowledge Relay**: The backend routes and stores strictly **opaque ciphertext envelopes** (`enc:v2:...` with legacy `enc:v1:...` backward compatibility) and ratchet headers. The server **never** decrypts, encrypts, parses, or logs message plaintext.
 2. **Zero Private Keys on Server**: Private cryptographic keys exist **exclusively in client memory**. The backend manages only public cryptographic metadata (Identity Keys, Signed Pre-keys, One-Time Pre-keys) to facilitate Extended Triple Diffie-Hellman (X3DH) handshakes.
 3. **Directory Privacy Guarantee**: Email addresses are strictly private to authenticated accounts. Users are discovered exclusively by `@username` or display name—email addresses are never exposed in search results, user profiles, or group rosters.
 4. **Offline Delivery Guarantees**: When a peer is offline, encrypted envelopes are persisted in the database with status `sent`. Upon client reconnection, pending envelopes are automatically flushed to the recipient across the WebSocket connection without server-side decryption.

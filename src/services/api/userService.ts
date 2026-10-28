@@ -10,13 +10,29 @@ const getApiBaseUrl = (): string => {
 /**
  * UserService
  *
- * User lookup and username search service.
+ * User lookup and username search service with in-memory caching and request deduplication.
  *
  * Security & Privacy Directive:
  * - Email addresses are NEVER exposed in user search results or public profiles.
  * - Users are discovered exclusively by `@username` or display name.
  */
 class UserService {
+  private userCacheById = new Map<string, Omit<User, 'email'>>();
+  private userCacheByUsername = new Map<string, Omit<User, 'email'>>();
+  private inFlightById = new Map<string, Promise<Omit<User, 'email'> | null>>();
+  private inFlightByUsername = new Map<string, Promise<Omit<User, 'email'> | null>>();
+
+  /**
+   * Directly cache a user in-memory to prevent redundant network lookups.
+   */
+  public cacheUser(user: Omit<User, 'email'>): void {
+    if (!user || !user.id) return;
+    this.userCacheById.set(user.id, user);
+    if (user.username) {
+      this.userCacheByUsername.set(user.username.toLowerCase().replace(/^@/, ''), user);
+    }
+  }
+
   /**
    * Search users by username (e.g. `@rahul123` or `rahul`).
    * Strips all private fields like email before returning results.
@@ -33,7 +49,11 @@ class UserService {
           headers: session ? { Authorization: `Bearer ${session.token}` } : {},
         });
         if (res.ok) {
-          return await res.json();
+          const remoteUsers: Array<Omit<User, 'email'>> = await res.json();
+          for (const u of remoteUsers) {
+            this.cacheUser(u);
+          }
+          return remoteUsers;
         }
       } catch (err) {
         console.warn('Backend search request failed, falling back to local list:', err);
@@ -45,7 +65,7 @@ class UserService {
 
     const allUsers = authService.getAllRegisteredUsers();
 
-    return allUsers
+    const results = allUsers
       .filter(u => {
         // Exclude current user from search results
         if (currentUserId && u.id === currentUserId) return false;
@@ -64,69 +84,119 @@ class UserService {
         avatarUrl: u.avatarUrl,
         // Notice: email is deliberately excluded!
       }));
+
+    for (const u of results) {
+      this.cacheUser(u);
+    }
+
+    return results;
   }
 
   public async getUserById(userId: string): Promise<Omit<User, 'email'> | null> {
-    const apiBase = getApiBaseUrl();
-    if (apiBase) {
-      const session = authService.getCurrentSession();
-      try {
-        const res = await fetch(`${apiBase}/users/${userId}`, {
-          headers: session ? { Authorization: `Bearer ${session.token}` } : {},
-        });
-        if (res.ok) {
-          return await res.json();
+    if (!userId) return null;
+
+    // 1. In-memory cache hit: 0ms return
+    const cached = this.userCacheById.get(userId);
+    if (cached) return cached;
+
+    // 2. Request deduplication: return existing in-flight promise
+    const inFlight = this.inFlightById.get(userId);
+    if (inFlight) return inFlight;
+
+    const promise = (async () => {
+      const apiBase = getApiBaseUrl();
+      if (apiBase) {
+        const session = authService.getCurrentSession();
+        try {
+          const res = await fetch(`${apiBase}/users/${userId}`, {
+            headers: session ? { Authorization: `Bearer ${session.token}` } : {},
+          });
+          if (res.ok) {
+            const user: Omit<User, 'email'> = await res.json();
+            this.cacheUser(user);
+            return user;
+          }
+        } catch (err) {
+          console.warn(`Backend fetch user by id failed: ${userId}`, err);
         }
-      } catch (err) {
-        console.warn(`Backend fetch user by id failed: ${userId}`, err);
       }
-    }
 
-    const allUsers = authService.getAllRegisteredUsers();
-    const found = allUsers.find(u => u.id === userId);
-    if (!found) return null;
+      const allUsers = authService.getAllRegisteredUsers();
+      const found = allUsers.find(u => u.id === userId);
+      if (!found) return null;
 
-    return {
-      id: found.id,
-      username: found.username,
-      displayName: found.displayName,
-      status: found.status,
-      lastSeen: found.lastSeen,
-      publicKeyFingerprint: found.publicKeyFingerprint,
-      avatarUrl: found.avatarUrl,
-    };
+      const user: Omit<User, 'email'> = {
+        id: found.id,
+        username: found.username,
+        displayName: found.displayName,
+        status: found.status,
+        lastSeen: found.lastSeen,
+        publicKeyFingerprint: found.publicKeyFingerprint,
+        avatarUrl: found.avatarUrl,
+      };
+
+      this.cacheUser(user);
+      return user;
+    })().finally(() => {
+      this.inFlightById.delete(userId);
+    });
+
+    this.inFlightById.set(userId, promise);
+    return promise;
   }
 
   public async getUserByUsername(username: string): Promise<Omit<User, 'email'> | null> {
     const clean = username.trim().toLowerCase().replace(/^@/, '');
-    const apiBase = getApiBaseUrl();
-    if (apiBase) {
-      const session = authService.getCurrentSession();
-      try {
-        const res = await fetch(`${apiBase}/users/username/${clean}`, {
-          headers: session ? { Authorization: `Bearer ${session.token}` } : {},
-        });
-        if (res.ok) {
-          return await res.json();
+    if (!clean) return null;
+
+    // 1. In-memory cache hit: 0ms return
+    const cached = this.userCacheByUsername.get(clean);
+    if (cached) return cached;
+
+    // 2. Request deduplication
+    const inFlight = this.inFlightByUsername.get(clean);
+    if (inFlight) return inFlight;
+
+    const promise = (async () => {
+      const apiBase = getApiBaseUrl();
+      if (apiBase) {
+        const session = authService.getCurrentSession();
+        try {
+          const res = await fetch(`${apiBase}/users/username/${clean}`, {
+            headers: session ? { Authorization: `Bearer ${session.token}` } : {},
+          });
+          if (res.ok) {
+            const user: Omit<User, 'email'> = await res.json();
+            this.cacheUser(user);
+            return user;
+          }
+        } catch (err) {
+          console.warn(`Backend fetch user by username failed: ${clean}`, err);
         }
-      } catch (err) {
-        console.warn(`Backend fetch user by username failed: ${clean}`, err);
       }
-    }
 
-    const allUsers = authService.getAllRegisteredUsers();
-    const found = allUsers.find(u => u.username.toLowerCase() === clean);
-    if (!found) return null;
+      const allUsers = authService.getAllRegisteredUsers();
+      const found = allUsers.find(u => u.username.toLowerCase() === clean);
+      if (!found) return null;
 
-    return {
-      id: found.id,
-      username: found.username,
-      displayName: found.displayName,
-      status: found.status,
-      lastSeen: found.lastSeen,
-      publicKeyFingerprint: found.publicKeyFingerprint,
-      avatarUrl: found.avatarUrl,
-    };
+      const user: Omit<User, 'email'> = {
+        id: found.id,
+        username: found.username,
+        displayName: found.displayName,
+        status: found.status,
+        lastSeen: found.lastSeen,
+        publicKeyFingerprint: found.publicKeyFingerprint,
+        avatarUrl: found.avatarUrl,
+      };
+
+      this.cacheUser(user);
+      return user;
+    })().finally(() => {
+      this.inFlightByUsername.delete(clean);
+    });
+
+    this.inFlightByUsername.set(clean, promise);
+    return promise;
   }
 }
 

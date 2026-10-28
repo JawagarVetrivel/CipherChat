@@ -15,7 +15,7 @@ GitHub Repo      : https://github.com/JawagarVetrivel/CipherChat
 Core Architectural Principle:
 CipherChat is intentionally built on a "dumb-pipe" relay design:
 - The server acts strictly as a transport and storage medium for opaque
-  ciphertext envelopes (e.g., enc:v1:...) and cryptographic ratchet headers.
+  ciphertext envelopes (e.g., enc:v2:...) and cryptographic ratchet headers.
 - The server NEVER has access to message plaintext.
 - The server NEVER stores, handles, or generates private cryptographic keys.
 - Encryption, decryption, and key management happen exclusively on client devices.
@@ -32,6 +32,18 @@ Live Deployment Links:
 - Health Check     : https://cipherchat-rtn2.onrender.com/api/health
 
 Completed Features & Current Capabilities:
+[x] Full Client-Side WebCrypto E2EE Encryption Engine
+    - Asymmetric Key Generation: Client generates ECDH P-256 key pairs stored in browser.
+    - Safety Number Fingerprints: 64-bit authentic SHA-256 public key fingerprints.
+    - Automated Public Key Publishing: Public keys published to /api/keys without private keys.
+    - Authenticated Symmetric Cipher: AES-256-GCM with 96-bit random IVs and 128-bit authentication tags.
+    - Wire Format: 'enc:v2:<iv_hex>:<ciphertext_and_tag_base64>'.
+    - Double Ratchet Header Simulation: Ephemeral ratchet keys & per-turn counters.
+    - Backward Compatibility: Seamless fallback support for legacy 'enc:v1:' seed messages.
+[x] Zero-Lag Message Loading & Instant Conversational Transitions
+    - In-memory contact cache with request deduplication eliminates sequential round-trip fetches.
+    - Parallel message decryption & concurrent envelope processing via Promise.all.
+    - 0ms cached message rendering removes the blocking "Decrypting session messages..." spinner.
 [x] Full-Duplex Real-Time WebSocket Transport
     - Instant messaging, typing indicators, and presence updates (online/away/offline).
 [x] Zero-Knowledge Server Relay
@@ -61,30 +73,21 @@ Completed Features & Current Capabilities:
 
 3. UPCOMING UPGRADES & ROADMAP
 --------------------------------------------------------------------------------
-Phase 1: Full Client-Side Cryptographic Protocol Implementation
+Phase 1: Full Curve25519 X3DH Handshake & Advanced Multi-Party Ratchets
 - Extended Triple Diffie-Hellman (X3DH) Handshake:
-  * Client-side generation of Identity Keys (IK), Signed Pre-keys (SPK), and
-    One-Time Pre-keys (OPK) using Curve25519 (X25519) and Ed25519 signatures.
-  * Asynchronous session initiation through the backend's public-key repository.
-- Double Ratchet Algorithm:
-  * Symmetric KDF ratchet + Diffie-Hellman ratchet for continuous per-message rekeying.
-  * Authenticated encryption with AES-256-GCM or ChaCha20-Poly1305.
-  * Forward Secrecy (FS): Compromise of current keys does not compromise past messages.
-  * Post-Compromise Security (PCS / Break-in Recovery): Future keys heal automatically.
+  * Replenishing one-time pre-keys (OPKs) and signed pre-keys (SPKs).
+  * Automated replenishment triggers when OPK pool drops below threshold.
+- Messaging Layer Security (MLS) Tree-KEM for Large Groups:
+  * Tree-based ratchet for logarithmic asymptotic complexity in large channels.
 
 Phase 2: Post-Quantum Cryptography (PQC) Integration
-- Hybrid key-exchange protocol pairing X25519 with post-quantum Key Encapsulation
-  Mechanisms (ML-KEM / CRYSTALS-Kyber) to defend against "Harvest Now, Decrypt Later".
+- Hybrid key-exchange protocol pairing ECDH / X25519 with post-quantum Key
+  Encapsulation Mechanisms (ML-KEM / CRYSTALS-Kyber) to defend against "Harvest Now, Decrypt Later".
 
 Phase 3: End-to-End Encrypted File & Media Sharing
-- Client-side chunked encryption for images, documents, and code snippets.
+- Client-side chunked AES-256-GCM encryption for images, documents, and code snippets.
 - Secure encrypted thumbnails and metadata envelopes.
 
-Phase 4: Safety Numbers & Verification
-- Out-of-band cryptographic Safety Number / QR-code verification to detect
-  and prevent Man-In-The-Middle (MITM) attacks.
-
-Phase 5: Scalable Group Cryptography
-- Implementation of Sender Keys / Messaging Layer Security (MLS) tree-based
-  group ratchets to optimize multi-party end-to-end encryption.
+Phase 4: Out-of-Band Safety Number & QR Code Verification
+- Visual QR code exchange and numeric safety number comparison to verify identity keys.
 ================================================================================

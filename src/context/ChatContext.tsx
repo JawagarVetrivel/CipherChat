@@ -89,7 +89,15 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return;
     }
 
-    setIsLoadingMessages(true);
+    // 0ms instant display from local in-memory decrypted cache
+    const cached = chatService.getCachedMessages(activeConversationId);
+    if (cached.length > 0) {
+      setMessages(cached);
+      setIsLoadingMessages(false);
+    } else {
+      setIsLoadingMessages(true);
+    }
+
     chatService.markAsRead(activeConversationId);
 
     chatService

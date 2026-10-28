@@ -34,6 +34,7 @@ const getApiBaseUrl = (): string => {
 class ChatService {
   private conversations: Conversation[] = [];
   private encryptedMessages: EncryptedMessage[] = [];
+  private decryptedMessageCache: Map<string, Message> = new Map();
   private currentUserId: string | null = null;
   private messageListeners: Set<(message: Message) => void> = new Set();
   private conversationUpdateListeners: Set<(conversations: Conversation[]) => void> = new Set();
@@ -44,6 +45,7 @@ class ChatService {
 
   public setUserId(userId: string): void {
     this.currentUserId = userId;
+    this.decryptedMessageCache.clear();
     cryptoService.setUserId(userId);
     this.loadPersistedData();
   }
@@ -272,6 +274,8 @@ class ChatService {
         },
       };
 
+      this.decryptedMessageCache.set(decryptedMessage.id, decryptedMessage);
+
       // Update conversation lastMessage & timestamp
       const conv = this.conversations.find(c => c.id === encryptedEnvelope.conversationId);
       if (conv) {
@@ -329,6 +333,20 @@ class ChatService {
     return this.conversations.find(c => c.id === id) || null;
   }
 
+  /**
+   * Fast synchronous accessor for already decrypted messages in memory.
+   * Enables instantaneous UI transitions without blanking or full-screen loading spinners.
+   */
+  public getCachedMessages(conversationId: string): Message[] {
+    const list: Message[] = [];
+    for (const msg of this.decryptedMessageCache.values()) {
+      if (msg.conversationId === conversationId) {
+        list.push(msg);
+      }
+    }
+    return list.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+  }
+
   public async getMessagesForConversation(conversationId: string): Promise<Message[]> {
     const apiBase = getApiBaseUrl();
     let rawList = this.encryptedMessages.filter(m => m.conversationId === conversationId);
@@ -356,39 +374,70 @@ class ChatService {
       }
     }
 
-    const result: Message[] = [];
-
-    for (const env of rawList) {
-      const plaintext = await cryptoService.decryptMessage(env);
-      let sender = await userService.getUserById(env.senderId);
-      if (!sender) {
-        sender = {
-          id: env.senderId,
-          username: env.senderId === this.currentUserId ? 'you' : 'contact',
-          displayName: env.senderId === this.currentUserId ? 'You' : 'Participant',
-          status: 'online',
-        };
-      }
-
-      result.push({
-        id: env.id,
-        conversationId: env.conversationId,
-        senderId: env.senderId,
-        sender,
-        plaintext,
-        timestamp: env.timestamp,
-        status: env.status || 'delivered',
-        isEncrypted: true,
-        rawEnvelope: env,
-        encryptionMetadata: {
-          ratchetStep: env.header.messageCounter,
-          verified: true,
-          algorithm: env.header.algorithm || 'AES-256-GCM',
-        },
-      });
+    // Pre-populate sender map from current conversation
+    const senderMap = new Map<string, Omit<User, 'email'>>();
+    const currentSessionUser = authService.getCurrentSession()?.user;
+    if (currentSessionUser) {
+      senderMap.set(currentSessionUser.id, currentSessionUser);
+      userService.cacheUser(currentSessionUser);
     }
 
-    return result.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+    const conv = this.conversations.find(c => c.id === conversationId);
+    if (conv) {
+      if (conv.type === 'direct' && (conv as DirectConversation).participant) {
+        const p = (conv as DirectConversation).participant;
+        senderMap.set(p.id, p);
+        userService.cacheUser(p);
+      } else if (conv.type === 'group' && (conv as Group).members) {
+        for (const m of (conv as Group).members) {
+          if (m.user) {
+            senderMap.set(m.userId, m.user);
+            userService.cacheUser(m.user);
+          }
+        }
+      }
+    }
+
+    // Process all envelopes concurrently in parallel
+    const messages = await Promise.all(
+      rawList.map(async (env) => {
+        const cached = this.decryptedMessageCache.get(env.id);
+        if (cached) return cached;
+
+        const plaintext = await cryptoService.decryptMessage(env);
+        let sender = senderMap.get(env.senderId);
+        if (!sender) {
+          sender = (await userService.getUserById(env.senderId)) || {
+            id: env.senderId,
+            username: env.senderId === this.currentUserId ? 'you' : 'contact',
+            displayName: env.senderId === this.currentUserId ? 'You' : 'Participant',
+            status: 'online',
+          };
+        }
+
+        const msg: Message = {
+          id: env.id,
+          conversationId: env.conversationId,
+          senderId: env.senderId,
+          sender,
+          plaintext,
+          timestamp: env.timestamp,
+          status: env.status || 'delivered',
+          isEncrypted: true,
+          rawEnvelope: env,
+          encryptionMetadata: {
+            ratchetStep: env.header?.messageCounter || 1,
+            verified: true,
+            algorithm: env.header?.algorithm || 'AES-256-GCM',
+          },
+        };
+
+        this.decryptedMessageCache.set(env.id, msg);
+        return msg;
+      })
+    );
+
+    return messages.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
   }
 
   /**
@@ -744,6 +793,8 @@ class ChatService {
         algorithm: encryptedEnvelope.header.algorithm || 'AES-256-GCM',
       },
     };
+
+    this.decryptedMessageCache.set(inMemoryMsg.id, inMemoryMsg);
 
     conv.lastMessage = inMemoryMsg;
     conv.updatedAt = inMemoryMsg.timestamp;

@@ -74,9 +74,14 @@ export const MessageList: React.FC<MessageListProps> = ({
     );
   }
 
+  // Sort messages strictly chronologically to ensure proper timeline and date grouping
+  const sortedMessages = [...messages].sort(
+    (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+  );
+
   // Group by date
   const grouped: Array<{ date: string; items: Message[] }> = [];
-  messages.forEach((msg) => {
+  sortedMessages.forEach((msg) => {
     const dateStr = formatDateHeader(msg.timestamp);
     const lastGroup = grouped[grouped.length - 1];
     if (lastGroup && lastGroup.date === dateStr) {

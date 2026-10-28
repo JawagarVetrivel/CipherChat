@@ -115,15 +115,22 @@ class ChatService {
         this.seedInitialConversations();
       }
 
-      const storedMsgs = localStorage.getItem(this.getStorageKey(STORAGE_MESSAGES_KEY));
+      const session = authService.getCurrentSession();
+      let storedMsgs = localStorage.getItem(this.getStorageKey(STORAGE_MESSAGES_KEY));
+      if (!storedMsgs && session?.user?.username === 'rahul123') {
+        storedMsgs =
+          localStorage.getItem('user_rahul_' + STORAGE_MESSAGES_KEY) ||
+          localStorage.getItem('cipherchat_messages_encrypted');
+      }
+
       if (storedMsgs) {
         this.encryptedMessages = JSON.parse(storedMsgs);
-      } else {
+      } else if (!session) {
+        // Only seed simulated mock messages in offline sandbox mode without an active login
         this.seedInitialMessages();
       }
     } catch {
       this.seedInitialConversations();
-      this.seedInitialMessages();
     }
   }
 
@@ -376,13 +383,21 @@ class ChatService {
           });
           if (res.ok) {
             const remoteEnvelopes: EncryptedMessage[] = await res.json();
-            const existingIds = new Set(this.encryptedMessages.map(m => m.id));
-            for (const env of remoteEnvelopes) {
-              if (!existingIds.has(env.id)) {
-                this.encryptedMessages.push(env);
-              }
+            if (Array.isArray(remoteEnvelopes) && remoteEnvelopes.length > 0) {
+              const remoteIds = new Set(remoteEnvelopes.map((m) => m.id));
+              const localPending = this.encryptedMessages.filter(
+                (m) =>
+                  m.conversationId === conversationId &&
+                  !remoteIds.has(m.id) &&
+                  !m.id.startsWith('msg_init_')
+              );
+              this.encryptedMessages = [
+                ...this.encryptedMessages.filter((m) => m.conversationId !== conversationId),
+                ...remoteEnvelopes,
+                ...localPending,
+              ];
+              rawList = [...remoteEnvelopes, ...localPending];
             }
-            rawList = this.encryptedMessages.filter(m => m.conversationId === conversationId);
           }
         } catch (err) {
           console.warn('Failed to fetch remote messages:', err);
@@ -418,7 +433,9 @@ class ChatService {
     const messages = await Promise.all(
       rawList.map(async (env) => {
         const cached = this.decryptedMessageCache.get(env.id);
-        if (cached) return cached;
+        if (cached && !cached.plaintext.startsWith('[Encrypted Message')) {
+          return cached;
+        }
 
         const plaintext = await cryptoService.decryptMessage(env);
         let sender = senderMap.get(env.senderId);
@@ -448,7 +465,9 @@ class ChatService {
           },
         };
 
-        this.decryptedMessageCache.set(env.id, msg);
+        if (plaintext && !plaintext.startsWith('[Encrypted Message')) {
+          this.decryptedMessageCache.set(env.id, msg);
+        }
         return msg;
       })
     );

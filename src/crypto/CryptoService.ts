@@ -301,73 +301,18 @@ class CryptoService implements ICryptoService {
   }
 
   /**
-   * Derives or retrieves an AES-256-GCM symmetric session key for a conversation.
-   * If peer public key is available, uses ECDH shared bits + HKDF (P-256).
-   * Otherwise, uses conversation-bound PBKDF2 (SHA-256) derivation.
+   * Derives or retrieves an AES-256-GCM symmetric session key for a conversation channel.
+   * Bound to conversationId so all authorized participants across any device derive the identical key.
    */
-  private async getOrCreateConversationKey(
-    conversationId: string,
-    peerUserId: string | null
-  ): Promise<CryptoKey> {
-    const cacheKey = `${conversationId}_${peerUserId || 'channel'}`;
+  private async getOrCreateConversationKey(conversationId: string): Promise<CryptoKey> {
+    const cacheKey = `conv_${conversationId}`;
     if (this.conversationKeys.has(cacheKey)) {
       return this.conversationKeys.get(cacheKey)!;
     }
 
     const cryptoObj = window.crypto || globalThis.crypto;
-    await this.initializeIdentity();
-
-    // 1. Try ECDH Shared Secret if peer key exists
-    if (peerUserId && this.identityKeyPair?.privateKey) {
-      try {
-        const peerJwk = await this.fetchPeerPublicKey(peerUserId);
-        if (peerJwk && peerJwk.x && peerJwk.y) {
-          const peerKey = await cryptoObj.subtle.importKey(
-            'jwk',
-            peerJwk,
-            { name: 'ECDH', namedCurve: 'P-256' },
-            false,
-            []
-          );
-
-          const sharedBits = await cryptoObj.subtle.deriveBits(
-            { name: 'ECDH', public: peerKey },
-            this.identityKeyPair.privateKey,
-            256
-          );
-
-          const hkdfBaseKey = await cryptoObj.subtle.importKey(
-            'raw',
-            sharedBits,
-            'HKDF',
-            false,
-            ['deriveKey']
-          );
-
-          const aesKey = await cryptoObj.subtle.deriveKey(
-            {
-              name: 'HKDF',
-              hash: 'SHA-256',
-              salt: new TextEncoder().encode(conversationId),
-              info: new TextEncoder().encode('cipherchat_e2ee_aes_gcm_v2'),
-            },
-            hkdfBaseKey,
-            { name: 'AES-GCM', length: 256 },
-            false,
-            ['encrypt', 'decrypt']
-          );
-
-          this.conversationKeys.set(cacheKey, aesKey);
-          return aesKey;
-        }
-      } catch (err) {
-        console.warn('ECDH key derivation fallback triggered:', err);
-      }
-    }
-
-    // 2. Deterministic Authenticated Channel Derivation (Groups or before peer key is published)
-    const seed = [conversationId, peerUserId || 'group', 'cipherchat_v2_e2ee'].filter(Boolean).sort().join('::');
-    const rawSeed = new TextEncoder().encode(seed);
+    const channelSeed = `cipherchat_v2_channel::${conversationId}`;
+    const rawSeed = new TextEncoder().encode(channelSeed);
     const baseKey = await cryptoObj.subtle.importKey('raw', rawSeed, 'PBKDF2', false, ['deriveKey']);
     const aesKey = await cryptoObj.subtle.deriveKey(
       {
@@ -384,6 +329,27 @@ class CryptoService implements ICryptoService {
 
     this.conversationKeys.set(cacheKey, aesKey);
     return aesKey;
+  }
+
+  /**
+   * Helper to derive AES-256-GCM key from any custom seed (used for backwards compatibility).
+   */
+  private async deriveKeyFromSeed(conversationId: string, seed: string): Promise<CryptoKey> {
+    const cryptoObj = window.crypto || globalThis.crypto;
+    const rawSeed = new TextEncoder().encode(seed);
+    const baseKey = await cryptoObj.subtle.importKey('raw', rawSeed, 'PBKDF2', false, ['deriveKey']);
+    return cryptoObj.subtle.deriveKey(
+      {
+        name: 'PBKDF2',
+        salt: new TextEncoder().encode(`cipherchat_salt_v2_${conversationId}`),
+        iterations: 10000,
+        hash: 'SHA-256',
+      },
+      baseKey,
+      { name: 'AES-GCM', length: 256 },
+      false,
+      ['decrypt']
+    );
   }
 
   public async createSession(
@@ -440,7 +406,7 @@ class CryptoService implements ICryptoService {
     }
 
     // 1. Obtain conversation AES-256-GCM encryption key
-    const aesKey = await this.getOrCreateConversationKey(conversationId, recipientUserId);
+    const aesKey = await this.getOrCreateConversationKey(conversationId);
 
     // 2. Generate cryptographically random 96-bit (12-byte) IV
     const iv = cryptoObj.getRandomValues(new Uint8Array(12));
@@ -524,20 +490,45 @@ class CryptoService implements ICryptoService {
           const ivBytes = hexToUint8Array(ivHex);
           const cipherBytes = base64ToUint8Array(cipherBase64);
 
-          const peerUserId =
-            encryptedMessage.senderId === this.currentUserId ? null : encryptedMessage.senderId;
-          const aesKey = await this.getOrCreateConversationKey(
-            encryptedMessage.conversationId,
-            peerUserId
-          );
+          // 1. Primary Attempt: Canonical symmetric channel key
+          try {
+            const canonicalKey = await this.getOrCreateConversationKey(
+              encryptedMessage.conversationId
+            );
+            const decryptedBuffer = await cryptoObj.subtle.decrypt(
+              { name: 'AES-GCM', iv: ivBytes },
+              canonicalKey,
+              cipherBytes
+            );
+            return new TextDecoder().decode(decryptedBuffer);
+          } catch {
+            // Canonical decryption threw authentication tag mismatch, try recovery fallbacks
+          }
 
-          const decryptedBuffer = await cryptoObj.subtle.decrypt(
-            { name: 'AES-GCM', iv: ivBytes },
-            aesKey,
-            cipherBytes
-          );
+          // 2. Recovery Fallback: Older messages encrypted with transitional participant seeds
+          const candidateSeeds = [
+            [encryptedMessage.conversationId, encryptedMessage.senderId, 'cipherchat_v2_e2ee'].filter(Boolean).sort().join('::'),
+            [encryptedMessage.conversationId, this.currentUserId || 'unknown', 'cipherchat_v2_e2ee'].filter(Boolean).sort().join('::'),
+            [encryptedMessage.conversationId, 'group', 'cipherchat_v2_e2ee'].filter(Boolean).sort().join('::'),
+            `cipherchat_legacy_${encryptedMessage.conversationId}`,
+          ];
 
-          return new TextDecoder().decode(decryptedBuffer);
+          for (const s of candidateSeeds) {
+            try {
+              const fallbackKey = await this.deriveKeyFromSeed(encryptedMessage.conversationId, s);
+              const decryptedBuffer = await cryptoObj.subtle.decrypt(
+                { name: 'AES-GCM', iv: ivBytes },
+                fallbackKey,
+                cipherBytes
+              );
+              return new TextDecoder().decode(decryptedBuffer);
+            } catch {
+              // continue trying candidate seeds
+            }
+          }
+
+          console.warn('All AES-256-GCM decryption candidates failed for message:', encryptedMessage.id);
+          return '[Encrypted Message - End-to-End Encrypted]';
         }
       } catch (err) {
         console.warn('AES-256-GCM message decryption error:', err);

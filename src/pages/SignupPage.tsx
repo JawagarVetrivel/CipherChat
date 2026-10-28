@@ -40,14 +40,9 @@ export const SignupPage: React.FC = () => {
       <div className="w-full max-w-md">
         {/* Top Window Header */}
         <div className="rounded-2xl border border-[#171D28] bg-[#0D1118] shadow-2xl overflow-hidden">
-          {/* macOS traffic light window bar */}
-          <div className="flex h-10 items-center justify-between border-b border-[#171D28] bg-[#0A0D13] px-3.5">
-            <div className="flex items-center gap-1.5">
-              <span className="h-2.5 w-2.5 rounded-full bg-[#FF5F56] inline-block" />
-              <span className="h-2.5 w-2.5 rounded-full bg-[#FFBD2E] inline-block" />
-              <span className="h-2.5 w-2.5 rounded-full bg-[#27C93F] inline-block" />
-              <span className="text-[11px] font-mono text-slate-400 ml-2">cipherchat-keygen://identity</span>
-            </div>
+          {/* Header bar */}
+          <div className="flex h-10 items-center justify-between border-b border-[#171D28] bg-[#0A0D13] px-4">
+            <span className="text-[11px] font-mono text-slate-400">cipherchat-keygen://identity</span>
             <div className="flex items-center gap-1.5 text-[10px] font-mono text-[#00E599]">
               <span className="h-1.5 w-1.5 rounded-full bg-[#00E599] animate-pulse" />
               <span>E2EE v3 Active</span>

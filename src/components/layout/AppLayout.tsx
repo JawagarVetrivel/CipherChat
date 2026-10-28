@@ -36,20 +36,10 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
 
   return (
     <div className="flex h-screen w-full flex-col overflow-hidden bg-[#080A0F] text-slate-100 select-none">
-      {/* Top Application Window Bar (macOS High-Assurance Frame) */}
+      {/* Top Application Window Bar */}
       <header className="flex h-11 w-full items-center justify-between border-b border-[#171D28] bg-[#0A0D13] px-3.5 z-20 flex-shrink-0">
-        {/* Left Section: macOS Traffic Lights + Title + E2EE Status */}
+        {/* Left Section: Brand & Workspace Name + E2EE Status */}
         <div className="flex items-center gap-3">
-          {/* macOS window traffic lights */}
-          <div className="flex items-center gap-1.5">
-            <span className="h-3 w-3 rounded-full bg-[#FF5F56] border border-[#E0443E] inline-block cursor-pointer hover:opacity-80" />
-            <span className="h-3 w-3 rounded-full bg-[#FFBD2E] border border-[#DEA123] inline-block cursor-pointer hover:opacity-80" />
-            <span className="h-3 w-3 rounded-full bg-[#27C93F] border border-[#1AAB29] inline-block cursor-pointer hover:opacity-80" />
-          </div>
-
-          <div className="h-4 w-[1px] bg-[#1E2638] mx-0.5 hidden sm:block" />
-
-          {/* Brand & Workspace Name */}
           <Link to="/app" className="flex items-center gap-2 group">
             <Shield className="h-4 w-4 text-[#00E599] transition-transform group-hover:scale-105" />
             <span className="text-xs font-semibold tracking-tight text-white">

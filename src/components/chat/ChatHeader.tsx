@@ -2,8 +2,6 @@ import React from 'react';
 import {
   ArrowLeft,
   Lock,
-  Phone,
-  Video,
   Search,
   Info,
   Users,
@@ -60,15 +58,14 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
               @{directParticipant.username}
             </span>
 
-            {/* Status indicator */}
+            {/* Status indicator (without hardcoded timezones) */}
             <div className="flex items-center gap-1.5 text-[11px] font-mono text-slate-400 ml-1">
               {isSomeoneTyping ? (
                 <span className="text-[#00E599] animate-pulse font-medium">● typing...</span>
               ) : directParticipant.status === 'away' ? (
                 <span className="flex items-center gap-1.5 text-slate-400">
                   <span className="h-1.5 w-1.5 rounded-full bg-amber-400 inline-block" />
-                  <span className="hidden sm:inline">Away · London (GMT+1)</span>
-                  <span className="sm:hidden">Away</span>
+                  <span>Away</span>
                 </span>
               ) : directParticipant.status === 'offline' ? (
                 <span className="flex items-center gap-1.5 text-slate-500">
@@ -78,8 +75,7 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
               ) : (
                 <span className="flex items-center gap-1.5 text-slate-400">
                   <span className="h-1.5 w-1.5 rounded-full bg-[#00E599] inline-block shadow-[0_0_6px_#00E599]" />
-                  <span className="hidden sm:inline">Active · Verified</span>
-                  <span className="sm:hidden">Active</span>
+                  <span>Active</span>
                 </span>
               )}
             </div>
@@ -108,22 +104,6 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
         >
           <Lock className="h-3 w-3 text-[#00E599]" />
           <span>Ratchet #142</span>
-        </button>
-
-        {/* Inert Voice Call Button (Visual match per request) */}
-        <button
-          className="rounded p-1.5 text-slate-400 hover:bg-[#141B28] hover:text-white transition-colors cursor-not-allowed opacity-80"
-          title="Encrypted Voice Call (Coming Soon)"
-        >
-          <Phone className="h-4 w-4" />
-        </button>
-
-        {/* Inert Video Call Button */}
-        <button
-          className="rounded p-1.5 text-slate-400 hover:bg-[#141B28] hover:text-white transition-colors cursor-not-allowed opacity-80"
-          title="Encrypted Video Call (Coming Soon)"
-        >
-          <Video className="h-4 w-4" />
         </button>
 
         {/* Search in Chat */}

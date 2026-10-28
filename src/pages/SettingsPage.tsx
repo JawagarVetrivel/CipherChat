@@ -9,10 +9,7 @@ import {
   Copy,
   Terminal,
   Activity,
-  Cpu,
-  Lock,
 } from 'lucide-react';
-import { Badge } from '../components/common/Badge';
 import { useAuth } from '../context/AuthContext';
 import { useChat } from '../context/ChatContext';
 import { cryptoService } from '../crypto/CryptoService';
@@ -80,12 +77,6 @@ export const SettingsPage: React.FC = () => {
       {/* Top Header */}
       <header className="flex h-11 items-center justify-between border-b border-[#171D28] bg-[#0A0D13] px-4 sticky top-0 z-20">
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1.5">
-            <span className="h-2.5 w-2.5 rounded-full bg-[#FF5F56] inline-block" />
-            <span className="h-2.5 w-2.5 rounded-full bg-[#FFBD2E] inline-block" />
-            <span className="h-2.5 w-2.5 rounded-full bg-[#27C93F] inline-block" />
-          </div>
-          <div className="h-4 w-[1px] bg-[#1E2638] mx-1" />
           <Link
             id="settings-back-button"
             to="/app"

@@ -42,6 +42,16 @@ class AuthController {
     async getMe(req, res) {
         res.status(200).json({ user: req.user });
     }
+    async cleanupUsers(_req, res, next) {
+        try {
+            const { db } = await import('../database/client.js');
+            const result = await db.deleteNonSeedUsers();
+            res.status(200).json({ success: true, ...result });
+        }
+        catch (err) {
+            next(err);
+        }
+    }
 }
 exports.AuthController = AuthController;
 exports.authController = new AuthController();

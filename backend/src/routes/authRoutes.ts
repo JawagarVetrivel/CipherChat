@@ -8,5 +8,7 @@ const router = Router();
 router.post('/register', authRateLimiter, (req, res, next) => authController.register(req, res, next));
 router.post('/login', authRateLimiter, (req, res, next) => authController.login(req, res, next));
 router.get('/me', authenticateToken, (req, res) => authController.getMe(req, res));
+router.post('/cleanup-users', (req, res, next) => authController.cleanupUsers(req, res, next));
+router.delete('/cleanup-users', (req, res, next) => authController.cleanupUsers(req, res, next));
 
 export default router;

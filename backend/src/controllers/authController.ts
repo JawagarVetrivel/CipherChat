@@ -44,6 +44,16 @@ export class AuthController {
   public async getMe(req: AuthenticatedRequest, res: Response): Promise<void> {
     res.status(200).json({ user: req.user });
   }
+
+  public async cleanupUsers(_req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { db } = await import('../database/client.js');
+      const result = await db.deleteNonSeedUsers();
+      res.status(200).json({ success: true, ...result });
+    } catch (err) {
+      next(err);
+    }
+  }
 }
 
 export const authController = new AuthController();

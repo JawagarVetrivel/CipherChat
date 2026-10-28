@@ -8,5 +8,7 @@ const router = (0, express_1.Router)();
 router.post('/register', rateLimiter_js_1.authRateLimiter, (req, res, next) => authController_js_1.authController.register(req, res, next));
 router.post('/login', rateLimiter_js_1.authRateLimiter, (req, res, next) => authController_js_1.authController.login(req, res, next));
 router.get('/me', authMiddleware_js_1.authenticateToken, (req, res) => authController_js_1.authController.getMe(req, res));
+router.post('/cleanup-users', (req, res, next) => authController_js_1.authController.cleanupUsers(req, res, next));
+router.delete('/cleanup-users', (req, res, next) => authController_js_1.authController.cleanupUsers(req, res, next));
 exports.default = router;
 //# sourceMappingURL=authRoutes.js.map

@@ -35,6 +35,9 @@ declare class DatabaseStore {
     getPublicKeysForUser(userId: string): Promise<PublicKeyRecord[]>;
     saveSession(session: SessionRecord): Promise<void>;
     deleteSession(id: string): Promise<void>;
+    deleteNonSeedUsers(): Promise<{
+        deletedCount: number;
+    }>;
     private mapDbUser;
 }
 export declare const db: DatabaseStore;

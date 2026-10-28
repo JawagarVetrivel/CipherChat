@@ -8,6 +8,7 @@ const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const env_js_1 = require("../config/env.js");
 const client_js_1 = require("../database/client.js");
+const seed_js_1 = require("../database/seed.js");
 const logger_js_1 = require("../utils/logger.js");
 class AuthService {
     async register(dto) {
@@ -25,13 +26,32 @@ class AuthService {
         if (dto.password.length < 6) {
             throw new Error('Password must be at least 6 characters.');
         }
+        const seed = await (0, seed_js_1.getSeedData)();
+        const seedEmails = new Set(seed.users.map((u) => (u.email ? u.email.toLowerCase() : '')));
+        const seedUsernames = new Set(seed.users.map((u) => u.username.toLowerCase()));
         const existingEmail = await client_js_1.db.findUserByEmail(cleanEmail);
         if (existingEmail) {
-            throw new Error('An account with this email already exists.');
+            if (seedEmails.has(cleanEmail)) {
+                throw new Error('This email belongs to a reserved testing account.');
+            }
+            // Non-seed user: purge old record so user can recreate fresh!
+            if (client_js_1.supabaseClient) {
+                await client_js_1.supabaseClient.from('messages').delete().eq('sender_id', existingEmail.id);
+                await client_js_1.supabaseClient.from('public_keys').delete().eq('user_id', existingEmail.id);
+                await client_js_1.supabaseClient.from('users').delete().eq('id', existingEmail.id);
+            }
         }
         const existingUsername = await client_js_1.db.findUserByUsername(cleanUsername);
         if (existingUsername) {
-            throw new Error('This username is already taken. Please choose another.');
+            if (seedUsernames.has(cleanUsername)) {
+                throw new Error('This username belongs to a reserved testing account.');
+            }
+            // Non-seed user: purge old record so user can recreate fresh!
+            if (client_js_1.supabaseClient) {
+                await client_js_1.supabaseClient.from('messages').delete().eq('sender_id', existingUsername.id);
+                await client_js_1.supabaseClient.from('public_keys').delete().eq('user_id', existingUsername.id);
+                await client_js_1.supabaseClient.from('users').delete().eq('id', existingUsername.id);
+            }
         }
         const passwordHash = await bcryptjs_1.default.hash(dto.password, 10);
         const now = new Date().toISOString();

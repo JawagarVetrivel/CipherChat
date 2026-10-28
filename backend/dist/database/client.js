@@ -203,7 +203,6 @@ class DatabaseStore {
                 }
                 const isMember = pIds.includes(userId) || d.participant?.id === userId || d.id.includes(userId);
                 if (isMember) {
-                    // Resolve other party so the caller sees their conversation peer, NEVER themselves
                     const peerId = pIds.find((id) => id !== userId) || (d.participant?.id !== userId ? d.participant?.id : null);
                     let peerUser = d.participant;
                     if (peerId && (peerId !== d.participant?.id || d.participant?.id === userId)) {
@@ -303,7 +302,6 @@ class DatabaseStore {
     async saveMessage(message) {
         await this.init();
         this.messages.set(message.id, message);
-        // Update conversation lastMessage & updatedAt
         const conv = this.conversations.get(message.conversationId);
         if (conv) {
             conv.lastMessage = message;
@@ -373,6 +371,56 @@ class DatabaseStore {
     async deleteSession(id) {
         await this.init();
         this.sessions.delete(id);
+    }
+    // --- Maintenance & Cleanup ---
+    async deleteNonSeedUsers() {
+        await this.init();
+        const seed = await (0, seed_js_1.getSeedData)();
+        const seedIds = new Set(seed.users.map((u) => u.id));
+        const seedUsernames = new Set(seed.users.map((u) => u.username.toLowerCase()));
+        const seedEmails = new Set(seed.users.map((u) => (u.email ? u.email.toLowerCase() : '')));
+        let deletedCount = 0;
+        if (supabaseClient) {
+            try {
+                const { data: allDbUsers, error: fetchErr } = await supabaseClient
+                    .from('users')
+                    .select('id, username, email');
+                if (!fetchErr && allDbUsers && allDbUsers.length > 0) {
+                    const toDelete = allDbUsers.filter((u) => !seedIds.has(String(u.id)) &&
+                        !seedUsernames.has(String(u.username || '').toLowerCase()) &&
+                        !seedEmails.has(String(u.email || '').toLowerCase()));
+                    if (toDelete.length > 0) {
+                        const idsToDelete = toDelete.map((u) => u.id);
+                        await supabaseClient.from('messages').delete().in('sender_id', idsToDelete);
+                        await supabaseClient.from('public_keys').delete().in('user_id', idsToDelete);
+                        await supabaseClient.from('users').delete().in('id', idsToDelete);
+                        deletedCount += idsToDelete.length;
+                        logger_js_1.logger.info(`Cleaned up ${idsToDelete.length} non-seed users from Supabase.`);
+                    }
+                }
+            }
+            catch (err) {
+                logger_js_1.logger.error('Failed to cleanup non-seed users in Supabase', { error: String(err) });
+            }
+        }
+        // In-memory store cleanup
+        for (const [id, user] of this.users.entries()) {
+            const userEmail = user.email ? user.email.toLowerCase() : '';
+            if (!seedIds.has(id) &&
+                !seedUsernames.has(user.username.toLowerCase()) &&
+                !seedEmails.has(userEmail)) {
+                this.users.delete(id);
+                deletedCount++;
+            }
+        }
+        // Clean up messages from deleted users
+        for (const [mId, msg] of this.messages.entries()) {
+            if (!seedIds.has(msg.senderId)) {
+                this.messages.delete(mId);
+            }
+        }
+        logger_js_1.logger.info(`Total non-seed users deleted: ${deletedCount}`);
+        return { deletedCount };
     }
     mapDbUser(row) {
         return {

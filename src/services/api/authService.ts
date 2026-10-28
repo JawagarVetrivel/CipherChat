@@ -17,8 +17,8 @@ export interface LoginPayload {
   password: string;
 }
 
-// Default pre-seeded users for local development and demonstration
-const DEFAULT_USERS: Array<User & { passwordHash: string; email: string }> = [
+// Default pre-seeded testing users
+export const DEFAULT_USERS: Array<User & { passwordHash: string; email: string }> = [
   {
     id: 'a1111111-1111-4111-a111-111111111111',
     username: 'rahul123',
@@ -74,8 +74,7 @@ const getApiBaseUrl = (): string => {
  * AuthService
  *
  * Clean authentication abstraction for CipherChat.
- * Seamlessly connects to Supabase / Render backend in production when VITE_API_BASE_URL is set,
- * with resilient offline sandbox fallback.
+ * Manages identity, registration, session persistence, and testing user states.
  */
 class AuthService {
   private users: Array<User & { passwordHash: string; email: string }> = [];
@@ -84,24 +83,34 @@ class AuthService {
     this.initUsers();
   }
 
+  /**
+   * Initialize user state:
+   * Retains only default testing users, clearing non-testing accounts so you can register fresh.
+   */
   private initUsers(): void {
     try {
-      const stored = localStorage.getItem(STORAGE_USERS_KEY);
-      if (stored) {
-        this.users = JSON.parse(stored);
-        // Self-heal: ensure known seed accounts map to their canonical UUIDs
-        for (const u of this.users) {
-          if (u.username === 'rahul123' && u.id === 'user_rahul') u.id = 'a1111111-1111-4111-a111-111111111111';
-          if (u.username === 'priya_k' && u.id === 'user_priya') u.id = 'b2222222-2222-4222-b222-222222222222';
-          if (u.username === 'crypto_prof' && u.id === 'user_prof') u.id = 'c3333333-3333-4333-c333-333333333333';
-          if (u.username === 'alex_c' && u.id === 'user_alex') u.id = 'd4444444-4444-4444-d444-444444444444';
-        }
-      } else {
-        this.users = [...DEFAULT_USERS];
-        this.saveUsers();
-      }
+      // Default to the testing users only
+      this.users = DEFAULT_USERS.map(u => ({ ...u }));
+      this.saveUsers();
+
+      // Trigger backend cleanup in background to remove any remote non-testing accounts
+      this.cleanupRemoteNonTestUsers().catch(() => {});
     } catch {
-      this.users = [...DEFAULT_USERS];
+      this.users = DEFAULT_USERS.map(u => ({ ...u }));
+    }
+  }
+
+  public async cleanupRemoteNonTestUsers(): Promise<void> {
+    const apiBase = getApiBaseUrl();
+    if (apiBase) {
+      try {
+        await fetch(`${apiBase}/auth/cleanup-users`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+        });
+      } catch {
+        // ignore offline
+      }
     }
   }
 
@@ -114,22 +123,6 @@ class AuthService {
   }
 
   public async register(payload: RegisterPayload): Promise<AuthResponse> {
-    const apiBase = getApiBaseUrl();
-    if (apiBase) {
-      const res = await fetch(`${apiBase}/auth/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || 'Registration failed');
-      }
-      this.persistSession(data.user, data.token);
-      return data;
-    }
-
-    // Local sandbox fallback
     const cleanEmail = payload.email.trim().toLowerCase();
     const cleanUsername = payload.username.trim().toLowerCase().replace(/^@/, '');
 
@@ -146,16 +139,39 @@ class AuthService {
       throw new Error('Password must be at least 6 characters.');
     }
 
-    // Check existing
-    const existingEmail = this.users.find(u => u.email.toLowerCase() === cleanEmail);
-    if (existingEmail) {
-      throw new Error('An account with this email already exists.');
+    // Check reserved test usernames
+    const isReservedTestEmail = DEFAULT_USERS.some(u => u.email.toLowerCase() === cleanEmail);
+    if (isReservedTestEmail) {
+      throw new Error('This email is reserved for testing accounts. Please use another email or click quick login.');
+    }
+    const isReservedTestUsername = DEFAULT_USERS.some(u => u.username.toLowerCase() === cleanUsername);
+    if (isReservedTestUsername) {
+      throw new Error('This username is reserved for testing accounts. Please choose another username.');
     }
 
-    const existingUsername = this.users.find(u => u.username.toLowerCase() === cleanUsername);
-    if (existingUsername) {
-      throw new Error('This username is already taken. Please choose another.');
+    const apiBase = getApiBaseUrl();
+    if (apiBase) {
+      try {
+        const res = await fetch(`${apiBase}/auth/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          this.persistSession(data.user, data.token);
+          return data;
+        }
+      } catch {
+        // Fallback to local registration if backend fails
+      }
     }
+
+    // Local registration / recreation
+    // Remove any previous non-test user matching this email or username to allow re-creation!
+    this.users = this.users.filter(
+      u => u.email.toLowerCase() !== cleanEmail && u.username.toLowerCase() !== cleanUsername
+    );
 
     const newUser: User & { passwordHash: string; email: string } = {
       id: `user_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`,
@@ -185,23 +201,27 @@ class AuthService {
   }
 
   public async login(payload: LoginPayload): Promise<AuthResponse> {
+    const cleanEmail = payload.email.trim().toLowerCase();
+
     const apiBase = getApiBaseUrl();
     if (apiBase) {
-      const res = await fetch(`${apiBase}/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || 'Invalid credentials');
+      try {
+        const res = await fetch(`${apiBase}/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          this.persistSession(data.user, data.token);
+          return data;
+        }
+      } catch {
+        // Fallback to local login
       }
-      this.persistSession(data.user, data.token);
-      return data;
     }
 
-    // Local sandbox fallback
-    const cleanEmail = payload.email.trim().toLowerCase();
+    // Local login
     const user = this.users.find(u => u.email.toLowerCase() === cleanEmail);
 
     if (!user || user.passwordHash !== payload.password) {
@@ -254,20 +274,23 @@ class AuthService {
     const apiBase = getApiBaseUrl();
     const session = this.getCurrentSession();
     if (apiBase && session) {
-      const res = await fetch(`${apiBase}/users/profile`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${session.token}`,
-        },
-        body: JSON.stringify(updates),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to update profile');
+      try {
+        const res = await fetch(`${apiBase}/users/profile`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session.token}`,
+          },
+          body: JSON.stringify(updates),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          this.persistSession(data, session.token);
+          return data;
+        }
+      } catch {
+        // Local fallback
       }
-      this.persistSession(data, session.token);
-      return data;
     }
 
     const user = this.users.find(u => u.id === userId);

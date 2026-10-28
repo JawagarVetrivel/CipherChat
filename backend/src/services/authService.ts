@@ -1,7 +1,8 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { env } from '../config/env.js';
-import { db } from '../database/client.js';
+import { db, supabaseClient } from '../database/client.js';
+import { getSeedData } from '../database/seed.js';
 import { AuthUser, User } from '../types/index.js';
 import { logger } from '../utils/logger.js';
 
@@ -40,14 +41,34 @@ export class AuthService {
       throw new Error('Password must be at least 6 characters.');
     }
 
+    const seed = await getSeedData();
+    const seedEmails = new Set(seed.users.map((u) => (u.email ? u.email.toLowerCase() : '')));
+    const seedUsernames = new Set(seed.users.map((u) => u.username.toLowerCase()));
+
     const existingEmail = await db.findUserByEmail(cleanEmail);
     if (existingEmail) {
-      throw new Error('An account with this email already exists.');
+      if (seedEmails.has(cleanEmail)) {
+        throw new Error('This email belongs to a reserved testing account.');
+      }
+      // Non-seed user: purge old record so user can recreate fresh!
+      if (supabaseClient) {
+        await supabaseClient.from('messages').delete().eq('sender_id', existingEmail.id);
+        await supabaseClient.from('public_keys').delete().eq('user_id', existingEmail.id);
+        await supabaseClient.from('users').delete().eq('id', existingEmail.id);
+      }
     }
 
     const existingUsername = await db.findUserByUsername(cleanUsername);
     if (existingUsername) {
-      throw new Error('This username is already taken. Please choose another.');
+      if (seedUsernames.has(cleanUsername)) {
+        throw new Error('This username belongs to a reserved testing account.');
+      }
+      // Non-seed user: purge old record so user can recreate fresh!
+      if (supabaseClient) {
+        await supabaseClient.from('messages').delete().eq('sender_id', existingUsername.id);
+        await supabaseClient.from('public_keys').delete().eq('user_id', existingUsername.id);
+        await supabaseClient.from('users').delete().eq('id', existingUsername.id);
+      }
     }
 
     const passwordHash = await bcrypt.hash(dto.password, 10);

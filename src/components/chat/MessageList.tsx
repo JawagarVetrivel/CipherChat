@@ -50,10 +50,10 @@ export const MessageList: React.FC<MessageListProps> = ({
 
   if (isLoading) {
     return (
-      <div className="flex-1 flex items-center justify-center p-8 bg-[#080A0F]">
+      <div className="flex-1 flex items-center justify-center p-8 bg-[#070709]">
         <div className="flex flex-col items-center gap-2">
-          <div className="w-5 h-5 border-2 border-[#1E2638] border-t-[#00E599] rounded-full animate-spin" />
-          <span className="text-xs text-[#00E599] font-mono">Decrypting session stream...</span>
+          <div className="w-5 h-5 border-2 border-[#1E1E28] border-t-[#FF5500] rounded-full animate-spin" />
+          <span className="text-xs text-[#FF7A1A] font-mono">Decrypting session stream...</span>
         </div>
       </div>
     );
@@ -79,20 +79,23 @@ export const MessageList: React.FC<MessageListProps> = ({
   return (
     <div
       id="message-list-container"
-      className="flex-1 overflow-y-auto px-4 py-5 space-y-6 bg-[#080A0F] select-text"
+      className="relative flex-1 overflow-y-auto px-4 py-5 space-y-6 bg-[#070709] select-text"
     >
+      {/* Ambient bottom warm glow reflecting the reference photo */}
+      <div className="pointer-events-none fixed bottom-16 left-0 right-0 h-44 bg-gradient-to-t from-[#FF4500]/12 via-[#FF4500]/3 to-transparent opacity-70 z-0" />
+
       {/* Top Banner: Signal Protocol Double Ratchet Session Status */}
-      <div className="flex items-center justify-center">
-        <div className="inline-flex items-center gap-2 rounded-xl border border-[#00E599]/30 bg-[#0B281E]/40 px-3.5 py-1.5 text-[11px] font-mono text-[#00E599] shadow-xs max-w-xl text-center">
-          <Lock className="h-3.5 w-3.5 text-[#00E599] flex-shrink-0" />
+      <div className="relative z-10 flex items-center justify-center">
+        <div className="inline-flex items-center gap-2 rounded-xl border border-[#FF5500]/30 bg-[#FF5500]/10 px-3.5 py-1.5 text-[11px] font-mono text-[#FF8800] shadow-[0_0_15px_rgba(255,85,0,0.1)] max-w-xl text-center">
+          <Lock className="h-3.5 w-3.5 text-[#FF5500] flex-shrink-0" />
           <span>Session established with Signal Protocol Double Ratchet · Perfect forward secrecy active</span>
         </div>
       </div>
 
       {messages.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-12 text-center">
-          <div className="h-10 w-10 rounded-xl bg-[#0D1118] border border-[#171D28] flex items-center justify-center mb-3">
-            <Lock className="h-4 w-4 text-[#00E599]" />
+        <div className="relative z-10 flex flex-col items-center justify-center py-12 text-center">
+          <div className="h-10 w-10 rounded-xl bg-[#0E0E14] border border-[#22222E] flex items-center justify-center mb-3 shadow-[0_0_15px_rgba(255,85,0,0.15)]">
+            <Lock className="h-4 w-4 text-[#FF5500]" />
           </div>
           <p className="text-xs font-semibold text-white">Cryptographic Session Established</p>
           <p className="text-[11px] font-mono text-slate-400 max-w-xs mt-1">
@@ -102,10 +105,10 @@ export const MessageList: React.FC<MessageListProps> = ({
       )}
 
       {grouped.map((group, gIdx) => (
-        <div key={gIdx} className="space-y-4">
+        <div key={gIdx} className="relative z-10 space-y-4">
           {/* Date Divider */}
           <div className="flex items-center justify-center my-3">
-            <span className="font-mono text-[10px] tracking-widest text-slate-400 uppercase">
+            <span className="font-mono text-[10px] tracking-widest text-slate-500 uppercase bg-[#070709]/80 px-2 py-0.5 rounded">
               {group.date}
             </span>
           </div>
@@ -196,12 +199,12 @@ export const MessageList: React.FC<MessageListProps> = ({
                     {!isMe ? (
                       <>
                         <span className="font-semibold text-white">{senderName}</span>
-                        <span>{formatTimestamp(msg.timestamp)}</span>
+                        <span className="text-slate-500">{formatTimestamp(msg.timestamp)}</span>
                       </>
                     ) : (
                       <>
-                        <span>{formatTimestamp(msg.timestamp)}</span>
-                        <span className="text-slate-400">You</span>
+                        <span className="text-slate-500">{formatTimestamp(msg.timestamp)}</span>
+                        <span className="text-[#FF8800] font-semibold">You</span>
                       </>
                     )}
                   </div>
@@ -209,10 +212,10 @@ export const MessageList: React.FC<MessageListProps> = ({
                   {/* Message Bubble + Action Hover Container */}
                   <div className="relative max-w-[85%] sm:max-w-md">
                     <div
-                      className={`relative rounded-xl px-3.5 py-2 text-xs sm:text-sm leading-relaxed transition-all shadow-sm ${
+                      className={`relative rounded-2xl px-3.5 py-2.5 text-xs sm:text-sm leading-relaxed transition-all ${
                         isMe
-                          ? 'bg-[#0D3829] text-emerald-100 border border-[#00E599]/25 rounded-tr-xs'
-                          : 'bg-[#131822] text-slate-100 border border-[#1E2638] rounded-tl-xs'
+                          ? 'bg-gradient-to-br from-[#FF5500] via-[#FF6600] to-[#E63900] text-white shadow-[0_4px_18px_rgba(255,85,0,0.28)] rounded-tr-xs border border-orange-400/25'
+                          : 'bg-[#121218] text-slate-100 border border-[#22222E] rounded-tl-xs shadow-sm'
                       }`}
                     >
                       {/* Decrypted plaintext */}
@@ -221,7 +224,7 @@ export const MessageList: React.FC<MessageListProps> = ({
 
                     {/* Delivery / Read Status below bubble for sent messages */}
                     {isMe && (
-                      <div className="flex items-center justify-end gap-1 mt-1 text-[10px] font-mono text-[#00E599]">
+                      <div className="flex items-center justify-end gap-1 mt-1 text-[10px] font-mono text-[#FF8800]">
                         {msg.status === 'sending' ? (
                           <div className="w-2.5 h-2.5 border-1 border-current border-t-transparent rounded-full animate-spin" />
                         ) : msg.status === 'sent' ? (
@@ -230,7 +233,7 @@ export const MessageList: React.FC<MessageListProps> = ({
                             <Check className="h-3 w-3" />
                           </span>
                         ) : (
-                          <span className="flex items-center gap-0.5 text-[#00E599]">
+                          <span className="flex items-center gap-0.5 text-[#FFA040]">
                             <span>Delivered</span>
                             <CheckCheck className="h-3 w-3" />
                           </span>
@@ -247,7 +250,7 @@ export const MessageList: React.FC<MessageListProps> = ({
                       {msg.rawEnvelope && (
                         <button
                           onClick={() => onInspectEnvelope(msg.rawEnvelope!)}
-                          className="p-1 rounded-md text-slate-400 hover:text-[#00E599] hover:bg-[#141B28] transition-colors"
+                          className="p-1 rounded-md text-slate-400 hover:text-[#FF7A1A] hover:bg-[#181822] transition-colors"
                           title="Inspect E2EE ciphertext"
                         >
                           <ShieldCheck className="h-3.5 w-3.5" />
@@ -274,11 +277,11 @@ export const MessageList: React.FC<MessageListProps> = ({
 
       {/* Typing indicator */}
       {typingUsers.length > 0 && (
-        <div className="flex items-center gap-2 text-xs text-[#00E599] pl-1 font-mono">
+        <div className="relative z-10 flex items-center gap-2 text-xs text-[#FF7A1A] pl-1 font-mono">
           <div className="flex space-x-1">
-            <div className="w-1.5 h-1.5 bg-[#00E599] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-            <div className="w-1.5 h-1.5 bg-[#00E599] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-            <div className="w-1.5 h-1.5 bg-[#00E599] rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+            <div className="w-1.5 h-1.5 bg-[#FF5500] rounded-full animate-bounce shadow-[0_0_4px_#FF5500]" style={{ animationDelay: '0ms' }} />
+            <div className="w-1.5 h-1.5 bg-[#FF5500] rounded-full animate-bounce shadow-[0_0_4px_#FF5500]" style={{ animationDelay: '150ms' }} />
+            <div className="w-1.5 h-1.5 bg-[#FF5500] rounded-full animate-bounce shadow-[0_0_4px_#FF5500]" style={{ animationDelay: '300ms' }} />
           </div>
           <span className="text-[11px]">{typingUsers.join(', ')} is typing...</span>
         </div>
@@ -287,11 +290,11 @@ export const MessageList: React.FC<MessageListProps> = ({
       {/* Delete Confirmation Modal */}
       {confirmDeleteId && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
           onClick={() => setConfirmDeleteId(null)}
         >
           <div
-            className="w-full max-w-sm rounded-xl border border-[#1E2638] bg-[#0D1118] p-5 shadow-2xl"
+            className="w-full max-w-sm rounded-xl border border-[#22222E] bg-[#0E0E14] p-5 shadow-[0_0_30px_rgba(0,0,0,0.8)]"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center gap-2.5 text-red-400 mb-2">

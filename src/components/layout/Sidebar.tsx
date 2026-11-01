@@ -6,7 +6,6 @@ import {
   MoreVertical,
   LogOut,
   Settings,
-  Hash,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useChat } from '../../context/ChatContext';
@@ -81,10 +80,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
   return (
     <aside
       id="app-sidebar"
-      className="flex h-full w-full flex-col border-r border-[#171D28] bg-[#0A0D13] select-none flex-shrink-0"
+      className="flex h-full w-full flex-col border-r border-[#1A1A22] bg-[#0A0A0E] select-none flex-shrink-0"
     >
       {/* Top Header: CHATS & PEERS */}
-      <div className="flex h-11 items-center justify-between border-b border-[#171D28] px-3.5">
+      <div className="flex h-11 items-center justify-between border-b border-[#1A1A22] px-3.5">
         <div className="flex items-center gap-2">
           <SlidersHorizontal className="h-3.5 w-3.5 text-slate-400" />
           <span className="text-[11px] font-mono font-semibold uppercase tracking-wider text-slate-300">
@@ -94,7 +93,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <button
           id="sidebar-new-chat-button"
           onClick={onOpenNewDirect}
-          className="rounded p-1 text-slate-400 hover:bg-[#141B28] hover:text-white transition-colors"
+          className="rounded p-1 text-slate-400 hover:bg-[#14141C] hover:text-[#FF7A1A] transition-colors"
           title="New direct chat or channel"
         >
           <Plus className="h-4 w-4" />
@@ -116,7 +115,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <button
                 id="sidebar-new-group-button"
                 onClick={onOpenNewGroup}
-                className="rounded p-0.5 text-slate-400 hover:bg-[#141B28] hover:text-[#00E599] transition-colors"
+                className="rounded p-0.5 text-slate-400 hover:bg-[#14141C] hover:text-[#FF7A1A] transition-colors"
                 title="Create new channel"
               >
                 <Plus className="h-3.5 w-3.5" />
@@ -133,17 +132,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   key={group.id}
                   id={`group-item-${group.id}`}
                   onClick={() => selectConversation(group.id)}
-                  className={`w-full text-left flex items-center justify-between rounded-lg px-2.5 py-1.5 transition-colors ${
+                  className={`w-full text-left flex items-center justify-between rounded-lg px-2.5 py-1.5 transition-all ${
                     isActive
-                      ? 'bg-[#121824] text-white font-medium border border-[#1E2638]'
-                      : 'hover:bg-[#0E131E] text-slate-300'
+                      ? 'bg-gradient-to-r from-[#FF5500]/20 via-[#FF5500]/5 to-transparent text-white font-medium border-l-2 border-[#FF5500] pl-2'
+                      : 'hover:bg-[#121218] text-slate-300'
                   }`}
                 >
                   <div className="flex items-center gap-2 min-w-0">
-                    <span className="text-slate-400 font-mono text-xs">#</span>
+                    <span className="text-[#FF6B00] font-mono text-xs font-semibold">#</span>
                     <span className="text-xs truncate font-medium">{group.name}</span>
                   </div>
-                  <span className="text-[10px] font-mono text-slate-400 ml-2 flex-shrink-0">
+                  <span className="text-[10px] font-mono text-slate-500 ml-2 flex-shrink-0">
                     {formatTime(group.lastMessage?.timestamp || group.updatedAt)}
                   </span>
                 </button>
@@ -155,9 +154,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <div className="px-2 py-1">
                 <button
                   onClick={onOpenNewGroup}
-                  className="w-full text-left flex items-center gap-2 rounded-lg px-2.5 py-2 border border-dashed border-[#1E2638] text-slate-400 hover:border-[#00E599]/40 hover:text-[#00E599] transition-colors text-xs"
+                  className="w-full text-left flex items-center gap-2 rounded-lg px-2.5 py-2 border border-dashed border-[#242430] text-slate-400 hover:border-[#FF5500]/50 hover:text-[#FF7A1A] transition-colors text-xs"
                 >
-                  <Plus className="h-3.5 w-3.5 text-[#00E599]" />
+                  <Plus className="h-3.5 w-3.5 text-[#FF5500]" />
                   <span>+ Create new channel</span>
                 </button>
               </div>
@@ -178,7 +177,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <button
                 id="sidebar-new-dm-button"
                 onClick={onOpenNewDirect}
-                className="rounded p-0.5 text-slate-400 hover:bg-[#141B28] hover:text-[#00E599] transition-colors"
+                className="rounded p-0.5 text-slate-400 hover:bg-[#14141C] hover:text-[#FF7A1A] transition-colors"
                 title="New direct peer chat"
               >
                 <Plus className="h-3.5 w-3.5" />
@@ -188,10 +187,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
           {filteredDirect.length === 0 ? (
             <div className="px-2 py-3 text-center">
-              <p className="text-[11px] text-slate-400">No active direct peers.</p>
+              <p className="text-[11px] text-slate-500 font-mono">No active direct peers.</p>
               <button
                 onClick={onOpenNewDirect}
-                className="mt-2 text-xs text-[#00E599] hover:underline font-mono"
+                className="mt-2 text-xs text-[#FF7A1A] hover:underline font-mono"
               >
                 + Connect to peer
               </button>
@@ -201,8 +200,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
               {filteredDirect.map((conv) => {
                 const isActive = activeConversationId === conv.id;
                 const peer = conv.participant;
-                const isEmeraldPeer =
-                  peer.username === 'priya_k' || peer.displayName.includes('Priya');
                 const lastMsgText =
                   conv.lastMessage?.plaintext || `@${peer.username}`;
 
@@ -213,8 +210,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     onClick={() => selectConversation(conv.id)}
                     className={`w-full text-left flex items-center justify-between rounded-xl p-2 transition-all ${
                       isActive
-                        ? 'bg-[#121824] border border-[#1E2638] shadow-sm'
-                        : 'hover:bg-[#0E131E] border border-transparent'
+                        ? 'bg-gradient-to-r from-[#FF5500]/20 via-[#FF5500]/5 to-transparent border-l-2 border-[#FF5500] pl-2 text-white shadow-xs'
+                        : 'hover:bg-[#121218] border border-transparent text-slate-300'
                     }`}
                   >
                     <div className="flex items-center gap-2.5 min-w-0 flex-1">
@@ -222,15 +219,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       <div className="relative flex-shrink-0">
                         <div
                           className={`h-8 w-8 rounded-lg flex items-center justify-center font-mono font-bold text-xs ${
-                            isEmeraldPeer
-                              ? 'bg-[#0B281E] text-[#00E599] border border-[#00E599]/30'
-                              : 'bg-[#141B28] text-slate-300 border border-[#1E2638]'
+                            isActive
+                              ? 'bg-gradient-to-br from-[#FF5500] to-[#CC3700] text-white shadow-[0_0_10px_rgba(255,85,0,0.35)]'
+                              : 'bg-[#18120E] text-[#FF8800] border border-[#FF5500]/30'
                           }`}
                         >
                           {peer.displayName.slice(0, 2).toUpperCase()}
                         </div>
                         {/* Status dot */}
-                        <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-[#00E599] ring-2 ring-[#0A0D13]" />
+                        <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-[#FF5500] ring-2 ring-[#0A0A0E] shadow-[0_0_4px_#FF5500]" />
                       </div>
 
                       {/* Name & Last Message */}
@@ -241,7 +238,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                           </span>
                           <span
                             className={`text-[10px] font-mono flex-shrink-0 ${
-                              isActive ? 'text-[#00E599] font-medium' : 'text-slate-400'
+                              isActive ? 'text-[#FF8800] font-medium' : 'text-slate-500'
                             }`}
                           >
                             {formatTime(conv.lastMessage?.timestamp || conv.updatedAt)}
@@ -253,9 +250,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                           </p>
                           {/* Unread indicator */}
                           {conv.unreadCount > 0 ? (
-                            <span className="h-2 w-2 rounded-full bg-[#00E599] flex-shrink-0" />
+                            <span className="h-2 w-2 rounded-full bg-[#FF5500] flex-shrink-0 shadow-[0_0_4px_#FF5500]" />
                           ) : isActive ? (
-                            <span className="h-1.5 w-1.5 rounded-full bg-[#00E599] flex-shrink-0" />
+                            <span className="h-1.5 w-1.5 rounded-full bg-[#FF5500] flex-shrink-0 shadow-[0_0_4px_#FF5500]" />
                           ) : null}
                         </div>
                       </div>
@@ -269,14 +266,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </div>
 
       {/* Bottom Profile Bar */}
-      <div className="border-t border-[#171D28] p-2.5 bg-[#0A0D13] relative">
-        <div className="flex items-center justify-between rounded-lg p-1 hover:bg-[#0E131E] transition-colors">
+      <div className="border-t border-[#1A1A22] p-2.5 bg-[#0A0A0E] relative">
+        <div className="flex items-center justify-between rounded-lg p-1 hover:bg-[#121218] transition-colors">
           <Link to="/settings" className="flex items-center gap-2.5 min-w-0 flex-1">
             <div className="relative flex-shrink-0">
-              <div className="h-7 w-7 rounded-lg bg-[#0B281E] text-[#00E599] border border-[#00E599]/30 flex items-center justify-center font-mono font-bold text-xs">
+              <div className="h-7 w-7 rounded-lg bg-[#18120E] text-[#FF7A1A] border border-[#FF5500]/30 flex items-center justify-center font-mono font-bold text-xs">
                 {userInitials}
               </div>
-              <span className="absolute -top-0.5 -right-0.5 h-1.5 w-1.5 rounded-full bg-[#00E599] ring-1 ring-[#0A0D13]" />
+              <span className="absolute -top-0.5 -right-0.5 h-1.5 w-1.5 rounded-full bg-[#FF5500] ring-1 ring-[#0A0A0E] shadow-[0_0_4px_#FF5500]" />
             </div>
             <div className="min-w-0 flex-1">
               <div className="text-xs font-semibold text-white truncate">
@@ -290,7 +287,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
           <button
             onClick={() => setShowUserMenu(!showUserMenu)}
-            className="p-1 rounded text-slate-400 hover:text-white hover:bg-[#141B28] transition-colors"
+            className="p-1 rounded text-slate-400 hover:text-white hover:bg-[#14141C] transition-colors"
             title="User options"
           >
             <MoreVertical className="h-4 w-4" />
@@ -299,11 +296,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         {/* User Popup Menu */}
         {showUserMenu && (
-          <div className="absolute bottom-14 right-2 w-48 rounded-xl border border-[#1E2638] bg-[#0D1118] p-1.5 shadow-2xl z-50">
+          <div className="absolute bottom-14 right-2 w-48 rounded-xl border border-[#22222E] bg-[#0E0E14] p-1.5 shadow-[0_0_25px_rgba(0,0,0,0.8)] z-50">
             <Link
               to="/settings"
               onClick={() => setShowUserMenu(false)}
-              className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 hover:bg-[#161D2C] transition-colors"
+              className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 hover:bg-[#181822] hover:text-[#FF7A1A] transition-colors"
             >
               <Settings className="h-3.5 w-3.5 text-slate-400" />
               <span>Identity Settings</span>

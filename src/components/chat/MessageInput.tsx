@@ -68,10 +68,10 @@ export const MessageInput: React.FC<MessageInputProps> = ({ conversationId }) =>
   return (
     <div
       id="message-input-container"
-      className="p-3 sm:p-4 bg-[#080A0F] border-t border-[#171D28]/80 select-none flex-shrink-0"
+      className="p-3 sm:p-4 bg-[#070709] border-t border-[#1A1A22] select-none flex-shrink-0"
     >
       {/* Input Card Container */}
-      <div className="rounded-xl border border-[#1E2638] bg-[#0D1118] p-2.5 shadow-lg focus-within:border-[#00E599]/50 transition-colors">
+      <div className="rounded-xl border border-[#1E1E28] bg-[#0C0C12] p-2.5 shadow-lg focus-within:border-[#FF5500]/60 focus-within:shadow-[0_0_20px_rgba(255,85,0,0.15)] transition-all">
         {/* Text Area */}
         <textarea
           id="message-textarea"
@@ -85,14 +85,14 @@ export const MessageInput: React.FC<MessageInputProps> = ({ conversationId }) =>
         />
 
         {/* Toolbar Row Inside Card */}
-        <div className="flex items-center justify-between pt-1.5 border-t border-[#171D28]/60 mt-1">
+        <div className="flex items-center justify-between pt-1.5 border-t border-[#181822] mt-1">
           {/* Status Indicator */}
           <div className="flex items-center gap-1.5 text-[10px] font-mono text-slate-400">
-            <span className="h-1.5 w-1.5 rounded-full bg-[#00E599] shadow-[0_0_4px_#00E599]" />
+            <span className="h-1.5 w-1.5 rounded-full bg-[#FF5500] shadow-[0_0_6px_#FF5500]" />
             <span>AES-256-GCM client encrypted</span>
           </div>
 
-          {/* Shortcut Hint & Emerald Send Button */}
+          {/* Shortcut Hint & Orange Send Button */}
           <div className="flex items-center gap-2.5">
             <span className="hidden sm:inline text-[10px] font-mono text-slate-500">
               ⏎ send · ⇧ newline
@@ -103,12 +103,12 @@ export const MessageInput: React.FC<MessageInputProps> = ({ conversationId }) =>
               type="button"
               disabled={!text.trim() || isSending}
               onClick={handleSend}
-              className="flex items-center gap-1.5 rounded-lg bg-[#00E599] text-[#051E14] font-semibold text-xs px-3 py-1.5 hover:bg-[#00F5A3] active:scale-95 disabled:opacity-30 disabled:pointer-events-none transition-all shadow-[0_0_10px_rgba(0,229,153,0.2)]"
+              className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-[#FF5500] to-[#FF7700] text-white font-semibold text-xs px-3.5 py-1.5 hover:brightness-110 active:scale-95 disabled:opacity-30 disabled:pointer-events-none transition-all shadow-[0_0_15px_rgba(255,85,0,0.35)]"
               title="Send Encrypted Message"
             >
               <span>Send</span>
               {isSending ? (
-                <div className="h-3 w-3 border-2 border-[#051E14]/40 border-t-[#051E14] rounded-full animate-spin" />
+                <div className="h-3 w-3 border-2 border-white/40 border-t-white rounded-full animate-spin" />
               ) : (
                 <ArrowUp className="h-3.5 w-3.5 stroke-[2.5]" />
               )}

@@ -60,16 +60,16 @@ export const IdentitySecurityPanel: React.FC<IdentitySecurityPanelProps> = ({ pe
   };
 
   return (
-    <aside className="w-80 border-l border-[#171D28] bg-[#0A0D13] flex flex-col h-full flex-shrink-0 select-none overflow-y-auto">
+    <aside className="w-80 border-l border-[#1A1A22] bg-[#0A0A0E] flex flex-col h-full flex-shrink-0 select-none overflow-y-auto">
       {/* Header */}
-      <div className="flex h-12 items-center justify-between border-b border-[#171D28] px-4">
+      <div className="flex h-12 items-center justify-between border-b border-[#1A1A22] px-4">
         <div className="flex items-center gap-2">
-          <Shield className="h-4 w-4 text-[#00E599]" />
+          <Shield className="h-4 w-4 text-[#FF5500]" />
           <h2 className="text-xs font-semibold text-slate-100 tracking-tight">Identity & Security</h2>
         </div>
         <button
           onClick={onClose}
-          className="rounded p-1 text-slate-400 hover:bg-[#151C28] hover:text-white transition-colors"
+          className="rounded p-1 text-slate-400 hover:bg-[#14141C] hover:text-white transition-colors"
           title="Close security panel"
         >
           <X className="h-4 w-4" />
@@ -78,14 +78,14 @@ export const IdentitySecurityPanel: React.FC<IdentitySecurityPanelProps> = ({ pe
 
       <div className="p-4 space-y-5 flex-1">
         {/* Contact Profile Box */}
-        <div className="rounded-xl border border-[#171D28] bg-[#0D1118] p-3.5 flex items-start gap-3">
-          <div className="w-11 h-11 rounded-xl bg-[#0B281E] text-[#00E599] border border-[#00E599]/30 flex items-center justify-center font-mono font-bold text-sm flex-shrink-0">
+        <div className="rounded-xl border border-[#22222E] bg-[#0E0E14] p-3.5 flex items-start gap-3">
+          <div className="w-11 h-11 rounded-xl bg-[#18120E] text-[#FF7A1A] border border-[#FF5500]/30 flex items-center justify-center font-mono font-bold text-sm flex-shrink-0 shadow-[0_0_10px_rgba(255,85,0,0.2)]">
             {peer.displayName.slice(0, 2).toUpperCase()}
           </div>
           <div className="min-w-0 flex-1">
             <h3 className="text-xs font-semibold text-white truncate">{peer.displayName}</h3>
             <p className="text-[11px] font-mono text-slate-400 truncate">@{peer.username}</p>
-            <p className="text-[10px] text-slate-400 mt-1 leading-tight">
+            <p className="text-[10px] text-slate-500 mt-1 leading-tight">
               Principal Cryptographer · Zero Knowledge Core
             </p>
           </div>
@@ -99,7 +99,7 @@ export const IdentitySecurityPanel: React.FC<IdentitySecurityPanelProps> = ({ pe
             </span>
           </div>
 
-          <div className="rounded-xl border border-[#171D28] bg-[#0D1118] p-3 space-y-2 text-xs">
+          <div className="rounded-xl border border-[#22222E] bg-[#0E0E14] p-3 space-y-2 text-xs">
             <div className="flex items-center justify-between py-0.5">
               <span className="text-slate-400 text-[11px]">Key Agreement</span>
               <span className="font-mono text-[11px] text-slate-200">X25519</span>
@@ -114,8 +114,8 @@ export const IdentitySecurityPanel: React.FC<IdentitySecurityPanelProps> = ({ pe
             </div>
             <div className="flex items-center justify-between py-0.5">
               <span className="text-slate-400 text-[11px]">Safety Status</span>
-              <span className="font-mono text-[11px] font-medium text-[#00E599] flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#00E599] inline-block animate-pulse" />
+              <span className="font-mono text-[11px] font-medium text-[#FF7A1A] flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#FF5500] inline-block animate-pulse shadow-[0_0_4px_#FF5500]" />
                 Verified Active
               </span>
             </div>
@@ -128,7 +128,7 @@ export const IdentitySecurityPanel: React.FC<IdentitySecurityPanelProps> = ({ pe
             <span className="text-[10px] font-mono font-semibold uppercase tracking-wider text-slate-400">
               SAFETY NUMBERS
             </span>
-            <span className="text-[10px] font-mono text-slate-400 bg-[#141B28] px-1.5 py-0.5 rounded border border-[#1F293D]">
+            <span className="text-[10px] font-mono text-slate-400 bg-[#161622] px-1.5 py-0.5 rounded border border-[#262638]">
               SHA-512
             </span>
           </div>
@@ -141,7 +141,7 @@ export const IdentitySecurityPanel: React.FC<IdentitySecurityPanelProps> = ({ pe
             {safetyBlocks.map((block, idx) => (
               <div
                 key={idx}
-                className="bg-[#0D1118] border border-[#171D28] rounded-lg py-1.5 px-2 text-center font-mono text-[11px] text-slate-200 tracking-wider hover:border-[#00E599]/30 transition-colors"
+                className="bg-[#0E0E14] border border-[#22222E] rounded-lg py-1.5 px-2 text-center font-mono text-[11px] text-slate-200 tracking-wider hover:border-[#FF5500]/40 transition-colors"
               >
                 {block}
               </div>
@@ -152,20 +152,20 @@ export const IdentitySecurityPanel: React.FC<IdentitySecurityPanelProps> = ({ pe
           <div className="grid grid-cols-2 gap-2">
             <button
               onClick={() => setShowQRModal(true)}
-              className="flex items-center justify-center gap-1.5 rounded-lg border border-[#1E2638] bg-[#0E131E] py-1.5 px-2 text-[11px] font-medium text-slate-200 hover:bg-[#161D2C] hover:border-[#2A354C] transition-all"
+              className="flex items-center justify-center gap-1.5 rounded-lg border border-[#262636] bg-[#12121A] py-1.5 px-2 text-[11px] font-medium text-slate-200 hover:bg-[#181824] hover:border-[#FF5500]/40 transition-all"
             >
-              <QrCode className="h-3.5 w-3.5 text-[#00E599]" />
+              <QrCode className="h-3.5 w-3.5 text-[#FF5500]" />
               <span>Compare QR</span>
             </button>
             <button
               onClick={() => setIsVerified(!isVerified)}
               className={`flex items-center justify-center gap-1.5 rounded-lg border py-1.5 px-2 text-[11px] font-medium transition-all ${
                 isVerified
-                  ? 'border-[#00E599]/40 bg-[#0B281E] text-[#00E599]'
-                  : 'border-[#1E2638] bg-[#0E131E] text-slate-200 hover:bg-[#161D2C]'
+                  ? 'border-[#FF5500]/40 bg-[#FF5500]/15 text-[#FFA040]'
+                  : 'border-[#262636] bg-[#12121A] text-slate-200 hover:bg-[#181824]'
               }`}
             >
-              <Check className="h-3.5 w-3.5 text-[#00E599]" />
+              <Check className="h-3.5 w-3.5 text-[#FF5500]" />
               <span>{isVerified ? 'Verified' : 'Mark Verified'}</span>
             </button>
           </div>
@@ -179,7 +179,7 @@ export const IdentitySecurityPanel: React.FC<IdentitySecurityPanelProps> = ({ pe
             </span>
           </div>
 
-          <div className="rounded-xl border border-[#171D28] bg-[#0D1118] p-3 space-y-2.5">
+          <div className="rounded-xl border border-[#22222E] bg-[#0E0E14] p-3 space-y-2.5">
             <div className="flex items-center justify-between text-xs">
               <span className="text-slate-300 flex items-center gap-1.5 text-[11px]">
                 <Clock className="h-3.5 w-3.5 text-slate-400" />
@@ -189,13 +189,13 @@ export const IdentitySecurityPanel: React.FC<IdentitySecurityPanelProps> = ({ pe
                 onClick={() =>
                   setDisappearingTimer(prev => (prev === '24h' ? '7d' : prev === '7d' ? 'Off' : '24h'))
                 }
-                className="bg-[#0B281E] text-[#00E599] border border-[#00E599]/30 text-[11px] font-mono px-2 py-0.5 rounded hover:bg-[#0E3528] transition-colors"
+                className="bg-[#FF5500]/15 text-[#FFA040] border border-[#FF5500]/30 text-[11px] font-mono px-2 py-0.5 rounded hover:bg-[#FF5500]/25 transition-colors"
               >
                 {disappearingTimer}
               </button>
             </div>
 
-            <div className="flex items-center justify-between text-xs pt-1 border-t border-[#171D28]">
+            <div className="flex items-center justify-between text-xs pt-1 border-t border-[#1E1E28]">
               <span className="text-slate-300 flex items-center gap-1.5 text-[11px]">
                 <RotateCw className="h-3.5 w-3.5 text-slate-400" />
                 Ratchet rekey cycle
@@ -216,14 +216,14 @@ export const IdentitySecurityPanel: React.FC<IdentitySecurityPanelProps> = ({ pe
 
           <div className="space-y-1.5">
             {/* Artifact 1 */}
-            <div className="flex items-center justify-between rounded-lg border border-[#171D28] bg-[#0D1118] p-2 hover:border-[#20293B] transition-colors group">
+            <div className="flex items-center justify-between rounded-lg border border-[#22222E] bg-[#0E0E14] p-2 hover:border-[#FF5500]/40 transition-colors group">
               <div className="flex items-center gap-2 min-w-0">
-                <div className="h-7 w-7 rounded bg-[#141B28] border border-[#1F293D] flex items-center justify-center flex-shrink-0 text-[#00E599]">
+                <div className="h-7 w-7 rounded bg-[#181822] border border-[#262638] flex items-center justify-center flex-shrink-0 text-[#FF5500]">
                   <FileCode className="h-3.5 w-3.5" />
                 </div>
                 <div className="min-w-0">
                   <div className="text-[11px] font-medium text-white truncate">ratchet_protocol.ts</div>
-                  <div className="text-[10px] font-mono text-slate-400">4.2 KB · TypeScript</div>
+                  <div className="text-[10px] font-mono text-slate-500">4.2 KB · TypeScript</div>
                 </div>
               </div>
               <button
@@ -245,14 +245,14 @@ export const IdentitySecurityPanel: React.FC<IdentitySecurityPanelProps> = ({ pe
             </div>
 
             {/* Artifact 2 */}
-            <div className="flex items-center justify-between rounded-lg border border-[#171D28] bg-[#0D1118] p-2 hover:border-[#20293B] transition-colors group">
+            <div className="flex items-center justify-between rounded-lg border border-[#22222E] bg-[#0E0E14] p-2 hover:border-[#FF5500]/40 transition-colors group">
               <div className="flex items-center gap-2 min-w-0">
-                <div className="h-7 w-7 rounded bg-[#141B28] border border-[#1F293D] flex items-center justify-center flex-shrink-0 text-amber-400">
+                <div className="h-7 w-7 rounded bg-[#181822] border border-[#262638] flex items-center justify-center flex-shrink-0 text-[#FF7A1A]">
                   <KeyRound className="h-3.5 w-3.5" />
                 </div>
                 <div className="min-w-0">
                   <div className="text-[11px] font-medium text-white truncate">priya_pubkey_2026.pem</div>
-                  <div className="text-[10px] font-mono text-slate-400">1.1 KB · Public Key</div>
+                  <div className="text-[10px] font-mono text-slate-500">1.1 KB · Public Key</div>
                 </div>
               </div>
               <button
@@ -279,11 +279,11 @@ export const IdentitySecurityPanel: React.FC<IdentitySecurityPanelProps> = ({ pe
       {/* QR Code Verification Modal */}
       {showQRModal && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
           onClick={() => setShowQRModal(false)}
         >
           <div
-            className="w-full max-w-sm rounded-xl border border-[#1F293D] bg-[#0D1118] p-5 shadow-2xl text-center"
+            className="w-full max-w-sm rounded-xl border border-[#262638] bg-[#0E0E14] p-5 shadow-2xl text-center"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-3">
@@ -307,12 +307,12 @@ export const IdentitySecurityPanel: React.FC<IdentitySecurityPanelProps> = ({ pe
                 ))}
               </div>
             </div>
-            <div className="p-2 rounded bg-[#0A0D13] border border-[#171D28] font-mono text-[11px] text-[#00E599] tracking-wider mb-3">
+            <div className="p-2 rounded bg-[#070709] border border-[#1E1E28] font-mono text-[11px] text-[#FFA040] tracking-wider mb-3">
               {safetyBlocks.join(' ')}
             </div>
             <button
               onClick={handleCopyFingerprint}
-              className="w-full flex items-center justify-center gap-2 rounded-lg bg-[#00E599] text-[#051E14] font-semibold text-xs py-2 hover:bg-[#00F5A3] transition-all"
+              className="w-full flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#FF5500] to-[#FF7700] text-white font-semibold text-xs py-2 hover:brightness-110 active:scale-95 transition-all shadow-[0_0_12px_rgba(255,85,0,0.3)]"
             >
               {copiedFingerprint ? <CheckCheck className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
               <span>{copiedFingerprint ? 'Fingerprint Copied' : 'Copy Verification Hash'}</span>
@@ -323,4 +323,3 @@ export const IdentitySecurityPanel: React.FC<IdentitySecurityPanelProps> = ({ pe
     </aside>
   );
 };
-

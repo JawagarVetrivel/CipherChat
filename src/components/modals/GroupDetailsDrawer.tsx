@@ -98,20 +98,20 @@ export const GroupDetailsDrawer: React.FC<GroupDetailsDrawerProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-40 flex justify-end bg-black/60 backdrop-blur-sm select-none">
+    <div className="fixed inset-0 z-40 flex justify-end bg-black/70 backdrop-blur-sm select-none">
       <div
         id="group-details-drawer"
-        className="h-full w-full max-w-sm border-l border-[#171D28] bg-[#0A0D13] shadow-2xl flex flex-col"
+        className="h-full w-full max-w-sm border-l border-[#1A1A22] bg-[#0A0A0E] shadow-2xl flex flex-col"
       >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-[#171D28] px-5 py-4 bg-[#0A0D13]">
+        <div className="flex items-center justify-between border-b border-[#1A1A22] px-5 py-4 bg-[#0A0A0E]">
           <span className="text-[10px] font-mono font-semibold uppercase tracking-wider text-slate-400">
             CHANNEL CONFIGURATION
           </span>
           <button
             id="close-group-details"
             onClick={onClose}
-            className="rounded p-1 text-slate-400 hover:bg-[#141B28] hover:text-white transition-colors"
+            className="rounded p-1 text-slate-400 hover:bg-[#14141C] hover:text-white transition-colors"
           >
             <X className="h-4 w-4" />
           </button>
@@ -119,8 +119,8 @@ export const GroupDetailsDrawer: React.FC<GroupDetailsDrawerProps> = ({
 
         <div className="flex-1 overflow-y-auto p-5 space-y-6">
           {/* Group Identity Card */}
-          <div className="flex flex-col items-center text-center pb-4 border-b border-[#171D28]">
-            <div className="h-14 w-14 rounded-2xl bg-[#0B281E] border border-[#00E599]/30 flex items-center justify-center text-lg font-mono text-[#00E599] font-bold mb-3">
+          <div className="flex flex-col items-center text-center pb-4 border-b border-[#1A1A22]">
+            <div className="h-14 w-14 rounded-2xl bg-[#18120E] border border-[#FF5500]/40 flex items-center justify-center text-lg font-mono text-[#FF7A1A] font-bold mb-3 shadow-[0_0_15px_rgba(255,85,0,0.25)]">
               {group.name.slice(0, 2).toUpperCase()}
             </div>
 
@@ -131,11 +131,11 @@ export const GroupDetailsDrawer: React.FC<GroupDetailsDrawerProps> = ({
                   value={editedName}
                   onChange={(e) => setEditedName(e.target.value)}
                   autoFocus
-                  className="rounded border border-[#1E2638] bg-[#0D1118] px-2 py-1 text-xs text-white focus:border-[#00E599] focus:outline-none"
+                  className="rounded border border-[#22222E] bg-[#070709] px-2 py-1 text-xs text-white focus:border-[#FF5500] focus:outline-none"
                 />
                 <button
                   onClick={handleSaveName}
-                  className="rounded bg-[#00E599] p-1 text-[#051E14] hover:bg-[#00F5A3]"
+                  className="rounded bg-gradient-to-r from-[#FF5500] to-[#FF7700] p-1 text-white hover:brightness-110"
                 >
                   <Check className="h-4 w-4" />
                 </button>
@@ -151,7 +151,7 @@ export const GroupDetailsDrawer: React.FC<GroupDetailsDrawerProps> = ({
                       setEditedName(group.name);
                       setIsEditingName(true);
                     }}
-                    className="text-slate-500 hover:text-white"
+                    className="text-slate-500 hover:text-[#FF7A1A]"
                     title="Edit channel name"
                   >
                     <Edit2 className="h-3.5 w-3.5" />
@@ -165,11 +165,11 @@ export const GroupDetailsDrawer: React.FC<GroupDetailsDrawerProps> = ({
             )}
 
             <div className="mt-3 flex items-center gap-2">
-              <span className="text-[10px] font-mono text-slate-300 bg-[#121824] px-2 py-0.5 rounded border border-[#1E2638]">
+              <span className="text-[10px] font-mono text-slate-300 bg-[#12121A] px-2 py-0.5 rounded border border-[#22222E]">
                 {group.members.length} peers
               </span>
-              <span className="text-[10px] font-mono text-[#00E599] bg-[#0B281E] border border-[#00E599]/30 px-2 py-0.5 rounded">
-                TreeKEM Ready
+              <span className="text-[10px] font-mono text-[#FFA040] bg-[#FF5500]/15 border border-[#FF5500]/30 px-2 py-0.5 rounded">
+                Sender Keys E2EE
               </span>
             </div>
           </div>
@@ -183,7 +183,7 @@ export const GroupDetailsDrawer: React.FC<GroupDetailsDrawerProps> = ({
               {isAdmin && !isAddingMember && (
                 <button
                   onClick={() => setIsAddingMember(true)}
-                  className="inline-flex items-center gap-1 text-xs font-mono text-[#00E599] hover:underline"
+                  className="inline-flex items-center gap-1 text-xs font-mono text-[#FF7A1A] hover:underline"
                 >
                   <UserPlus className="h-3 w-3" />
                   <span>+ Add</span>
@@ -193,7 +193,7 @@ export const GroupDetailsDrawer: React.FC<GroupDetailsDrawerProps> = ({
 
             {/* Add Member inline form */}
             {isAddingMember && (
-              <div className="mb-3 rounded-xl border border-[#171D28] bg-[#0D1118] p-3">
+              <div className="mb-3 rounded-xl border border-[#22222E] bg-[#0E0E14] p-3">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-[11px] font-mono text-slate-400">
                     Add peer by @handle
@@ -217,7 +217,7 @@ export const GroupDetailsDrawer: React.FC<GroupDetailsDrawerProps> = ({
                     value={addSearchQuery}
                     onChange={(e) => handleSearchUsers(e.target.value)}
                     autoFocus
-                    className="w-full rounded border border-[#1E2638] bg-[#0A0D13] pl-8 pr-2 py-1 text-xs text-white focus:border-[#00E599] focus:outline-none font-mono"
+                    className="w-full rounded border border-[#242432] bg-[#070709] pl-8 pr-2 py-1 text-xs text-white focus:border-[#FF5500] focus:outline-none font-mono"
                   />
                 </div>
                 {addSearchResults.length > 0 && (
@@ -225,7 +225,7 @@ export const GroupDetailsDrawer: React.FC<GroupDetailsDrawerProps> = ({
                     {addSearchResults.map((u) => (
                       <div
                         key={u.id}
-                        className="flex items-center justify-between rounded p-1.5 hover:bg-[#141B28]"
+                        className="flex items-center justify-between rounded p-1.5 hover:bg-[#161622]"
                       >
                         <div className="flex items-center gap-2">
                           <Avatar name={u.displayName} size="sm" />
@@ -235,7 +235,7 @@ export const GroupDetailsDrawer: React.FC<GroupDetailsDrawerProps> = ({
                         </div>
                         <button
                           onClick={() => handleAddMember(u)}
-                          className="rounded bg-[#00E599] px-2 py-0.5 text-[11px] font-bold text-[#051E14] hover:bg-[#00F5A3]"
+                          className="rounded bg-gradient-to-r from-[#FF5500] to-[#FF7700] px-2 py-0.5 text-[11px] font-bold text-white hover:brightness-110"
                         >
                           Add
                         </button>
@@ -253,7 +253,7 @@ export const GroupDetailsDrawer: React.FC<GroupDetailsDrawerProps> = ({
                 return (
                   <div
                     key={m.userId}
-                    className="flex items-center justify-between rounded-lg p-2 hover:bg-[#0D1118] border border-transparent hover:border-[#171D28] transition-colors"
+                    className="flex items-center justify-between rounded-lg p-2 hover:bg-[#12121A] border border-transparent hover:border-[#1E1E28] transition-colors"
                   >
                     <div className="flex items-center gap-2.5">
                       <Avatar name={m.user.displayName} status={m.user.status} size="sm" />
@@ -269,7 +269,7 @@ export const GroupDetailsDrawer: React.FC<GroupDetailsDrawerProps> = ({
                             @{m.user.username}
                           </span>
                           {m.role === 'admin' && (
-                            <span className="text-[9px] font-mono text-[#00E599] bg-[#0B281E] px-1 rounded border border-[#00E599]/30">
+                            <span className="text-[9px] font-mono text-[#FFA040] bg-[#FF5500]/15 px-1 rounded border border-[#FF5500]/30">
                               Admin
                             </span>
                           )}
@@ -293,20 +293,20 @@ export const GroupDetailsDrawer: React.FC<GroupDetailsDrawerProps> = ({
           </div>
 
           {/* Cryptography notice */}
-          <div className="rounded-xl border border-[#171D28] bg-[#0D1118] p-3 text-xs text-slate-400">
-            <div className="flex items-center gap-1.5 font-medium text-[#00E599] mb-1 font-mono">
-              <Shield className="h-3.5 w-3.5" />
+          <div className="rounded-xl border border-[#22222E] bg-[#0E0E14] p-3 text-xs text-slate-400">
+            <div className="flex items-center gap-1.5 font-medium text-[#FF7A1A] mb-1 font-mono">
+              <Shield className="h-3.5 w-3.5 text-[#FF5500]" />
               <span>Channel Key Rotation</span>
             </div>
             <p className="text-[11px] leading-relaxed">
-              Designed for Sender Keys / TreeKEM group ratchet protocols. Group member changes will
-              re-key the broadcast chain once protocol extensions are activated.
+              Protected by Sender Keys group ratchets. Adding or removing members dynamically
+              re-keys the channel to guarantee both forward and backward secrecy.
             </p>
           </div>
         </div>
 
         {/* Footer Actions */}
-        <div className="border-t border-[#171D28] p-4 bg-[#0A0D13]">
+        <div className="border-t border-[#1A1A22] p-4 bg-[#0A0A0E]">
           <button
             onClick={handleLeave}
             className="w-full flex items-center justify-center gap-2 rounded-lg border border-red-900/50 bg-red-950/20 py-2 text-xs font-medium text-red-400 hover:bg-red-950/40 transition-colors"

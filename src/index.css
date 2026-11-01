@@ -8,23 +8,23 @@
     color-scheme: dark;
   }
   body {
-    @apply bg-[#080A0F] text-slate-100 antialiased selection:bg-[#00E599]/20 selection:text-[#00E599];
+    @apply bg-[#070709] text-slate-100 antialiased selection:bg-[#FF5500]/25 selection:text-[#FFA040];
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
 }
 
-/* Cyber cryptographic custom scrollbars */
+/* Sleek obsidian cryptographic custom scrollbars */
 ::-webkit-scrollbar {
   width: 5px;
   height: 5px;
 }
 ::-webkit-scrollbar-track {
-  background: #090C10;
+  background: #0A0A0E;
 }
 ::-webkit-scrollbar-thumb {
-  background: #1B2333;
+  background: #1C1C24;
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #00E599;
+  background: #FF5500;
 }

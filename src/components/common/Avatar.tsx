@@ -6,7 +6,7 @@ interface AvatarProps {
   size?: 'sm' | 'md' | 'lg' | 'xl';
   status?: 'online' | 'offline' | 'away';
   className?: string;
-  variant?: 'emerald' | 'slate' | 'neutral';
+  variant?: 'orange' | 'emerald' | 'slate' | 'neutral';
 }
 
 export const Avatar: React.FC<AvatarProps> = ({
@@ -15,7 +15,7 @@ export const Avatar: React.FC<AvatarProps> = ({
   size = 'md',
   status,
   className = '',
-  variant = 'emerald',
+  variant = 'orange',
 }) => {
   const getInitials = (n: string) => {
     if (!n) return '??';
@@ -39,14 +39,14 @@ export const Avatar: React.FC<AvatarProps> = ({
   };
 
   const statusColorClasses = {
-    online: 'bg-[#00E599] shadow-[0_0_6px_#00E599]',
+    online: 'bg-[#FF5500] shadow-[0_0_8px_#FF5500]',
     offline: 'bg-neutral-500',
     away: 'bg-amber-400 shadow-[0_0_6px_#fbbf24]',
   };
 
   // Color scheme variants based on name initials or explicit variant
   const initials = getInitials(name);
-  const isEmerald = variant === 'emerald' || initials === 'PK' || initials === 'RS';
+  const isOrange = variant === 'orange' || variant === 'emerald' || initials === 'PK' || initials === 'RS';
 
   return (
     <div className={`relative inline-flex flex-shrink-0 ${className}`}>
@@ -54,14 +54,14 @@ export const Avatar: React.FC<AvatarProps> = ({
         <img
           src={avatarUrl}
           alt={name}
-          className={`${sizeClasses[size]} object-cover border border-[#1E2638]`}
+          className={`${sizeClasses[size]} object-cover border border-[#22222E]`}
         />
       ) : (
         <div
           className={`${sizeClasses[size]} ${
-            isEmerald
-              ? 'bg-[#0B281E] text-[#00E599] border border-[#00E599]/30'
-              : 'bg-[#141B28] text-slate-200 border border-[#212D42]'
+            isOrange
+              ? 'bg-[#18100C] text-[#FF7A1A] border border-[#FF5500]/30 shadow-inner'
+              : 'bg-[#14141E] text-slate-200 border border-[#22222E]'
           } flex items-center justify-center font-mono select-none transition-all`}
         >
           {initials}
@@ -70,7 +70,7 @@ export const Avatar: React.FC<AvatarProps> = ({
 
       {status && (
         <span
-          className={`absolute -top-0.5 -right-0.5 block rounded-full ring-[#0A0D12] ${statusSizeClasses[size]} ${statusColorClasses[status]}`}
+          className={`absolute -top-0.5 -right-0.5 block rounded-full ring-[#0A0A0E] ${statusSizeClasses[size]} ${statusColorClasses[status]}`}
           title={`Status: ${status}`}
         />
       )}

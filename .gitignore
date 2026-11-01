@@ -52,3 +52,5 @@ vite.config.ts.timestamp-*
 
 # Local educational explanation files
 ENCRYPTION_EXPLAINED.txt
+EXPLAIN_TO_PROF.txt
+EXPLAIN_TO_PROF*.txt

@@ -237,6 +237,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const startDirectConversation = useCallback(
     async (peerUser: Omit<User, 'email'>): Promise<DirectConversation> => {
       const conv = await chatService.getOrCreateDirectConversation(peerUser);
+      setConversations((prev) => [conv, ...prev.filter((c) => c.id !== conv.id)]);
       setActiveConversationId(conv.id);
       return conv;
     },
@@ -246,6 +247,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const createGroup = useCallback(
     async (name: string, members: Array<Omit<User, 'email'>>, description?: string): Promise<Group> => {
       const newGroup = await chatService.createGroup(name, members, description);
+      setConversations((prev) => [newGroup, ...prev.filter((c) => c.id !== newGroup.id)]);
       setActiveConversationId(newGroup.id);
       return newGroup;
     },

@@ -21,8 +21,10 @@ export const NewGroupModal: React.FC<NewGroupModalProps> = ({ isOpen, onClose })
   const [searchResults, setSearchResults] = useState<Array<Omit<User, 'email'>>>([]);
   const [selectedUsers, setSelectedUsers] = useState<Array<Omit<User, 'email'>>>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoadingPeers, setIsLoadingPeers] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // When modal opens, load all peers right away
   useEffect(() => {
     if (!isOpen) {
       setGroupName('');
@@ -33,17 +35,21 @@ export const NewGroupModal: React.FC<NewGroupModalProps> = ({ isOpen, onClose })
       return;
     }
 
-    userService.searchUsers('', currentUser?.id).then(() => {
-      userService.searchUsers(' ', currentUser?.id).then(setSearchResults);
-    });
+    setIsLoadingPeers(true);
+    userService.searchUsers('', currentUser?.id)
+      .then((peers) => {
+        setSearchResults(peers);
+      })
+      .finally(() => setIsLoadingPeers(false));
   }, [isOpen, currentUser]);
 
+  // Handle live search
   useEffect(() => {
     if (!isOpen) return;
 
     const timer = setTimeout(() => {
       userService.searchUsers(searchQuery, currentUser?.id).then(setSearchResults);
-    }, 200);
+    }, 150);
 
     return () => clearTimeout(timer);
   }, [searchQuery, isOpen, currentUser]);
@@ -60,22 +66,19 @@ export const NewGroupModal: React.FC<NewGroupModalProps> = ({ isOpen, onClose })
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!groupName.trim()) {
-      setError('Please provide a group name.');
-      return;
-    }
-    if (selectedUsers.length === 0) {
-      setError('Please select at least one member for the group.');
+    const cleanName = groupName.trim();
+    if (!cleanName) {
+      setError('Please provide a channel or group name.');
       return;
     }
 
     setIsSubmitting(true);
     setError(null);
     try {
-      await createGroup(groupName.trim(), selectedUsers, description.trim());
+      await createGroup(cleanName, selectedUsers, description.trim());
       onClose();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to create group.';
+      const msg = err instanceof Error ? err.message : 'Failed to create channel.';
       setError(msg);
     } finally {
       setIsSubmitting(false);
@@ -99,7 +102,7 @@ export const NewGroupModal: React.FC<NewGroupModalProps> = ({ isOpen, onClose })
           <div className="flex items-center gap-2">
             <Users className="h-4 w-4 text-[#00E599]" />
             <h2 className="text-xs font-semibold text-white tracking-tight">
-              Create Encrypted Channel
+              Create Encrypted Channel / Group
             </h2>
           </div>
           <button
@@ -131,10 +134,11 @@ export const NewGroupModal: React.FC<NewGroupModalProps> = ({ isOpen, onClose })
               <input
                 id="group-name-input"
                 type="text"
-                placeholder="e.g. crypto-lab"
+                placeholder="e.g. crypto-lab, dev-team, security-audit"
                 value={groupName}
                 onChange={(e) => setGroupName(e.target.value)}
                 required
+                autoFocus
                 className="w-full rounded-lg border border-[#1E2638] bg-[#0A0D13] px-3 py-2 text-xs text-white placeholder:text-slate-600 focus:border-[#00E599] focus:outline-none transition-colors"
               />
             </div>
@@ -145,7 +149,7 @@ export const NewGroupModal: React.FC<NewGroupModalProps> = ({ isOpen, onClose })
                 htmlFor="group-description-input"
                 className="block text-xs font-mono text-slate-300 mb-1"
               >
-                Channel Description
+                Description (Optional)
               </label>
               <input
                 id="group-description-input"
@@ -167,7 +171,7 @@ export const NewGroupModal: React.FC<NewGroupModalProps> = ({ isOpen, onClose })
                   {selectedUsers.map((u) => (
                     <span
                       key={u.id}
-                      className="inline-flex items-center gap-1 rounded-md bg-[#0B281E] border border-[#00E599]/30 px-2 py-0.5 text-xs text-[#00E599] font-mono"
+                      className="inline-flex items-center gap-1.5 rounded-md bg-[#0B281E] border border-[#00E599]/30 px-2 py-0.5 text-xs text-[#00E599] font-mono"
                     >
                       <span>@{u.username}</span>
                       <button
@@ -185,23 +189,31 @@ export const NewGroupModal: React.FC<NewGroupModalProps> = ({ isOpen, onClose })
 
             {/* User Search & Selection */}
             <div>
-              <label className="block text-xs font-mono text-slate-300 mb-1">
-                Add Peers
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-xs font-mono text-slate-300">
+                  Select Peers to Add (Optional)
+                </label>
+                <span className="text-[10px] font-mono text-slate-500">
+                  {selectedUsers.length} selected
+                </span>
+              </div>
+
               <div className="relative mb-2">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
                 <input
                   type="text"
-                  placeholder="Search peers by @handle..."
+                  placeholder="Filter peers by @username..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full rounded-lg border border-[#1E2638] bg-[#0A0D13] pl-9 pr-3 py-1.5 text-xs text-white placeholder:text-slate-600 focus:border-[#00E599] focus:outline-none transition-colors font-mono"
                 />
               </div>
 
-              <div className="max-h-40 overflow-y-auto rounded-lg border border-[#171D28] bg-[#0A0D13] p-1 space-y-0.5">
-                {searchResults.length === 0 ? (
-                  <div className="py-4 text-center text-xs text-slate-500">No peers found</div>
+              <div className="max-h-48 overflow-y-auto rounded-lg border border-[#171D28] bg-[#0A0D13] p-1 space-y-0.5">
+                {isLoadingPeers ? (
+                  <div className="py-6 text-center text-xs font-mono text-[#00E599]">Loading available peers...</div>
+                ) : searchResults.length === 0 ? (
+                  <div className="py-6 text-center text-xs text-slate-500 font-mono">No peers found</div>
                 ) : (
                   searchResults.map((peer) => {
                     const isSelected = selectedUsers.some((u) => u.id === peer.id);
@@ -256,10 +268,10 @@ export const NewGroupModal: React.FC<NewGroupModalProps> = ({ isOpen, onClose })
             <button
               id="submit-create-group-button"
               type="submit"
-              disabled={isSubmitting || !groupName.trim() || selectedUsers.length === 0}
+              disabled={isSubmitting || !groupName.trim()}
               className="rounded-lg bg-[#00E599] px-4 py-1.5 text-xs font-bold text-[#051E14] hover:bg-[#00F5A3] active:scale-95 disabled:opacity-50 transition-all shadow-[0_0_10px_rgba(0,229,153,0.2)]"
             >
-              {isSubmitting ? 'Creating...' : 'Create Channel'}
+              {isSubmitting ? 'Creating Channel...' : 'Create Channel'}
             </button>
           </div>
         </form>

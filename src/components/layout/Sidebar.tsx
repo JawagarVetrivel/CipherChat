@@ -109,9 +109,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <span className="text-[10px] font-mono font-semibold uppercase tracking-wider text-slate-400">
               CHANNELS
             </span>
-            <span className="text-[10px] font-mono text-slate-500">
-              {Math.max(filteredGroups.length, 2)}
-            </span>
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] font-mono text-slate-500">
+                {filteredGroups.length}
+              </span>
+              <button
+                id="sidebar-new-group-button"
+                onClick={onOpenNewGroup}
+                className="rounded p-0.5 text-slate-400 hover:bg-[#141B28] hover:text-[#00E599] transition-colors"
+                title="Create new channel"
+              >
+                <Plus className="h-3.5 w-3.5" />
+              </button>
+            </div>
           </div>
 
           <div className="space-y-0.5">
@@ -140,30 +150,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
               );
             })}
 
-            {/* If there are no custom groups yet, render mock channels from the screenshot */}
+            {/* If there are no groups yet, show create channel prompt */}
             {filteredGroups.length === 0 && (
-              <>
+              <div className="px-2 py-1">
                 <button
                   onClick={onOpenNewGroup}
-                  className="w-full text-left flex items-center justify-between rounded-lg px-2.5 py-1.5 hover:bg-[#0E131E] text-slate-300 transition-colors"
+                  className="w-full text-left flex items-center gap-2 rounded-lg px-2.5 py-2 border border-dashed border-[#1E2638] text-slate-400 hover:border-[#00E599]/40 hover:text-[#00E599] transition-colors text-xs"
                 >
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className="text-slate-400 font-mono text-xs">#</span>
-                    <span className="text-xs font-medium text-slate-200">crypto-lab</span>
-                  </div>
-                  <span className="text-[10px] font-mono text-slate-400">21:25</span>
+                  <Plus className="h-3.5 w-3.5 text-[#00E599]" />
+                  <span>+ Create new channel</span>
                 </button>
-                <button
-                  onClick={onOpenNewGroup}
-                  className="w-full text-left flex items-center justify-between rounded-lg px-2.5 py-1.5 hover:bg-[#0E131E] text-slate-300 transition-colors"
-                >
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className="text-slate-400 font-mono text-xs">#</span>
-                    <span className="text-xs font-medium text-slate-200">audit-alpha</span>
-                  </div>
-                  <span className="text-[10px] font-mono text-slate-400">Yday</span>
-                </button>
-              </>
+              </div>
             )}
           </div>
         </div>
@@ -174,9 +171,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <span className="text-[10px] font-mono font-semibold uppercase tracking-wider text-slate-400">
               DIRECT MESSAGES
             </span>
-            <span className="text-[10px] font-mono text-slate-500">
-              {filteredDirect.length > 0 ? `1-${filteredDirect.length}` : '0'}
-            </span>
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] font-mono text-slate-500">
+                {filteredDirect.length > 0 ? `1-${filteredDirect.length}` : '0'}
+              </span>
+              <button
+                id="sidebar-new-dm-button"
+                onClick={onOpenNewDirect}
+                className="rounded p-0.5 text-slate-400 hover:bg-[#141B28] hover:text-[#00E599] transition-colors"
+                title="New direct peer chat"
+              >
+                <Plus className="h-3.5 w-3.5" />
+              </button>
+            </div>
           </div>
 
           {filteredDirect.length === 0 ? (

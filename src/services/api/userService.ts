@@ -41,27 +41,28 @@ class UserService {
     query: string,
     currentUserId?: string
   ): Promise<Array<Omit<User, 'email'>>> {
+    const cleanQuery = query.trim().toLowerCase().replace(/^@/, '');
+
     const apiBase = getApiBaseUrl();
     if (apiBase) {
       const session = authService.getCurrentSession();
       try {
-        const res = await fetch(`${apiBase}/users/search?q=${encodeURIComponent(query)}`, {
+        const res = await fetch(`${apiBase}/users/search?q=${encodeURIComponent(cleanQuery)}`, {
           headers: session ? { Authorization: `Bearer ${session.token}` } : {},
         });
         if (res.ok) {
           const remoteUsers: Array<Omit<User, 'email'>> = await res.json();
-          for (const u of remoteUsers) {
-            this.cacheUser(u);
+          if (Array.isArray(remoteUsers) && remoteUsers.length > 0) {
+            for (const u of remoteUsers) {
+              this.cacheUser(u);
+            }
+            return remoteUsers.filter(u => !currentUserId || u.id !== currentUserId);
           }
-          return remoteUsers;
         }
       } catch (err) {
         console.warn('Backend search request failed, falling back to local list:', err);
       }
     }
-
-    const cleanQuery = query.trim().toLowerCase().replace(/^@/, '');
-    if (!cleanQuery) return [];
 
     const allUsers = authService.getAllRegisteredUsers();
 
@@ -69,6 +70,9 @@ class UserService {
       .filter(u => {
         // Exclude current user from search results
         if (currentUserId && u.id === currentUserId) return false;
+
+        // If no query or whitespace, return all available peers
+        if (!cleanQuery) return true;
 
         const matchesUsername = u.username.toLowerCase().includes(cleanQuery);
         const matchesDisplay = u.displayName.toLowerCase().includes(cleanQuery);
@@ -82,7 +86,6 @@ class UserService {
         lastSeen: u.lastSeen,
         publicKeyFingerprint: u.publicKeyFingerprint,
         avatarUrl: u.avatarUrl,
-        // Notice: email is deliberately excluded!
       }));
 
     for (const u of results) {

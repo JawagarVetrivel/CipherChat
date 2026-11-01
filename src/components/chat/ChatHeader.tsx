@@ -2,7 +2,6 @@ import React from 'react';
 import {
   ArrowLeft,
   Lock,
-  Search,
   Info,
   Users,
 } from 'lucide-react';
@@ -58,7 +57,7 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
               @{directParticipant.username}
             </span>
 
-            {/* Status indicator (without hardcoded timezones) */}
+            {/* Status indicator */}
             <div className="flex items-center gap-1.5 text-[11px] font-mono text-slate-400 ml-1">
               {isSomeoneTyping ? (
                 <span className="text-[#00E599] animate-pulse font-medium">● typing...</span>
@@ -84,12 +83,16 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
 
         {!isDirect && group && (
           <div className="flex items-center gap-2.5 min-w-0">
-            <span className="font-mono text-slate-400 text-sm">#</span>
+            <span className="font-mono text-[#00E599] text-sm font-semibold">#</span>
             <h1 className="text-xs sm:text-sm font-semibold text-white truncate">{group.name}</h1>
-            <div className="flex items-center gap-1 text-[11px] text-slate-400 font-mono">
-              <Users className="h-3 w-3" />
+            <button
+              onClick={onOpenGroupDetails}
+              className="flex items-center gap-1 text-[11px] text-slate-400 hover:text-white font-mono bg-[#111722] hover:bg-[#161F2E] border border-[#1E2638] px-2 py-0.5 rounded-md transition-colors"
+              title="View channel members and settings"
+            >
+              <Users className="h-3 w-3 text-[#00E599]" />
               <span>{group.members.length} members</span>
-            </div>
+            </button>
           </div>
         )}
       </div>
@@ -100,34 +103,36 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
         <button
           onClick={onInspectSecurity}
           className="flex items-center gap-1.5 rounded-md border border-[#00E599]/30 bg-[#0B281E]/60 px-2.5 py-1 text-[11px] font-mono font-medium text-[#00E599] hover:bg-[#0E3528] transition-colors"
-          title="Signal Protocol Double Ratchet #142 Active"
+          title="Signal Protocol Double Ratchet #142 Active (Click to inspect ciphertext)"
         >
           <Lock className="h-3 w-3 text-[#00E599]" />
           <span>Ratchet #142</span>
         </button>
 
-        {/* Search in Chat */}
-        <button
-          onClick={onInspectSecurity}
-          className="rounded p-1.5 text-slate-400 hover:bg-[#141B28] hover:text-white transition-colors"
-          title="Search conversation messages"
-        >
-          <Search className="h-4 w-4" />
-        </button>
-
-        {/* Info Toggle for Identity & Security Panel */}
-        <button
-          id="identity-security-toggle"
-          onClick={onToggleSecurityPanel || onOpenGroupDetails}
-          className={`rounded p-1.5 transition-colors ${
-            isSecurityPanelOpen
-              ? 'bg-[#151C28] text-[#00E599]'
-              : 'text-slate-400 hover:bg-[#141B28] hover:text-white'
-          }`}
-          title="Toggle Identity & Security panel"
-        >
-          <Info className="h-4 w-4" />
-        </button>
+        {/* Group Details or Identity & Security Panel Toggle */}
+        {isDirect ? (
+          <button
+            id="identity-security-toggle"
+            onClick={onToggleSecurityPanel}
+            className={`rounded p-1.5 transition-colors ${
+              isSecurityPanelOpen
+                ? 'bg-[#151C28] text-[#00E599]'
+                : 'text-slate-400 hover:bg-[#141B28] hover:text-white'
+            }`}
+            title="Toggle Identity & Security panel"
+          >
+            <Info className="h-4 w-4" />
+          </button>
+        ) : (
+          <button
+            id="group-info-toggle"
+            onClick={onOpenGroupDetails}
+            className="rounded p-1.5 text-slate-400 hover:bg-[#141B28] hover:text-white transition-colors"
+            title="Channel members & configuration"
+          >
+            <Info className="h-4 w-4" />
+          </button>
+        )}
       </div>
     </header>
   );

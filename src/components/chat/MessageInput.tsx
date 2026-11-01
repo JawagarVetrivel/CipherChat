@@ -1,11 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import {
-  Paperclip,
-  Code,
-  Smile,
-  Mic,
-  ArrowUp,
-} from 'lucide-react';
+import { ArrowUp } from 'lucide-react';
 import { useChat } from '../../context/ChatContext';
 import { DirectConversation } from '../../types';
 
@@ -91,37 +85,11 @@ export const MessageInput: React.FC<MessageInputProps> = ({ conversationId }) =>
         />
 
         {/* Toolbar Row Inside Card */}
-        <div className="flex items-center justify-between pt-1 border-t border-[#171D28]/60 mt-1">
-          {/* Action Icons */}
-          <div className="flex items-center gap-1 text-slate-400">
-            <button
-              type="button"
-              className="p-1.5 rounded hover:bg-[#141B28] hover:text-white transition-colors"
-              title="Attach File"
-            >
-              <Paperclip className="h-4 w-4" />
-            </button>
-            <button
-              type="button"
-              className="p-1.5 rounded hover:bg-[#141B28] hover:text-white transition-colors"
-              title="Code Snippet"
-            >
-              <Code className="h-4 w-4" />
-            </button>
-            <button
-              type="button"
-              className="p-1.5 rounded hover:bg-[#141B28] hover:text-white transition-colors"
-              title="Emoji"
-            >
-              <Smile className="h-4 w-4" />
-            </button>
-            <button
-              type="button"
-              className="p-1.5 rounded hover:bg-[#141B28] hover:text-white transition-colors"
-              title="Encrypted Voice Note"
-            >
-              <Mic className="h-4 w-4" />
-            </button>
+        <div className="flex items-center justify-between pt-1.5 border-t border-[#171D28]/60 mt-1">
+          {/* Status Indicator */}
+          <div className="flex items-center gap-1.5 text-[10px] font-mono text-slate-400">
+            <span className="h-1.5 w-1.5 rounded-full bg-[#00E599] shadow-[0_0_4px_#00E599]" />
+            <span>AES-256-GCM client encrypted</span>
           </div>
 
           {/* Shortcut Hint & Emerald Send Button */}
@@ -147,15 +115,6 @@ export const MessageInput: React.FC<MessageInputProps> = ({ conversationId }) =>
             </button>
           </div>
         </div>
-      </div>
-
-      {/* Footer Status Indicators */}
-      <div className="mt-2 flex items-center justify-between px-1 text-[10px] font-mono text-slate-400">
-        <div className="flex items-center gap-1.5">
-          <span className="h-1.5 w-1.5 rounded-full bg-[#00E599] shadow-[0_0_4px_#00E599]" />
-          <span>Client-side AES-256-GCM encryption enabled</span>
-        </div>
-        <span className="text-slate-400">Ratchet state: synchronized</span>
       </div>
     </div>
   );

@@ -66,7 +66,9 @@ class ChatService {
           .then((res) => (res.ok ? res.json() : []))
           .then((convs: Conversation[]) => {
             if (convs && Array.isArray(convs) && convs.length > 0) {
-              this.conversations = convs;
+              const remoteIds = new Set(convs.map((c) => c.id));
+              const localOnly = this.conversations.filter((c) => !remoteIds.has(c.id));
+              this.conversations = [...convs, ...localOnly];
               this.persistData();
               this.emitConversations();
             }
@@ -570,6 +572,7 @@ class ChatService {
           if (res.ok) {
             const remoteGroup: Group = await res.json();
             this.conversations.unshift(remoteGroup);
+            this.persistData();
             this.emitConversations();
             return remoteGroup;
           }
@@ -630,6 +633,7 @@ class ChatService {
             const updated: Group = await res.json();
             const idx = this.conversations.findIndex(c => c.id === groupId);
             if (idx >= 0) this.conversations[idx] = updated;
+            this.persistData();
             this.emitConversations();
             return updated;
           }
@@ -674,6 +678,7 @@ class ChatService {
             const updated: Group = await res.json();
             const idx = this.conversations.findIndex(c => c.id === groupId);
             if (idx >= 0) this.conversations[idx] = updated;
+            this.persistData();
             this.emitConversations();
             return updated;
           }
@@ -711,6 +716,7 @@ class ChatService {
             const updated: Group = await res.json();
             const idx = this.conversations.findIndex(c => c.id === groupId);
             if (idx >= 0) this.conversations[idx] = updated;
+            this.persistData();
             this.emitConversations();
             return updated;
           }

@@ -85,16 +85,28 @@ class AuthService {
 
   /**
    * Initialize user state:
-   * Retains only default testing users, clearing non-testing accounts so you can register fresh.
+   * Restores registered users from localStorage, ensuring pre-seeded testing users are always present.
    */
   private initUsers(): void {
     try {
-      // Default to the testing users only
+      const stored = localStorage.getItem(STORAGE_USERS_KEY);
+      if (stored) {
+        const parsed: Array<User & { passwordHash: string; email: string }> = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          // Merge pre-seeded test accounts if they aren't already present
+          const existingIds = new Set(parsed.map(u => u.id));
+          const existingUsernames = new Set(parsed.map(u => u.username.toLowerCase()));
+          for (const def of DEFAULT_USERS) {
+            if (!existingIds.has(def.id) && !existingUsernames.has(def.username.toLowerCase())) {
+              parsed.push({ ...def });
+            }
+          }
+          this.users = parsed;
+          return;
+        }
+      }
       this.users = DEFAULT_USERS.map(u => ({ ...u }));
       this.saveUsers();
-
-      // Trigger backend cleanup in background to remove any remote non-testing accounts
-      this.cleanupRemoteNonTestUsers().catch(() => {});
     } catch {
       this.users = DEFAULT_USERS.map(u => ({ ...u }));
     }

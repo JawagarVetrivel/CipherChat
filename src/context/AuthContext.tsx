@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { authService, LoginPayload, RegisterPayload } from '../services/api/authService';
+import { authService, LoginPayload, RegisterPayload, AuthResponse } from '../services/api/authService';
 import { chatService } from '../services/api/chatService';
 import { wsClient } from '../services/websocket/WebSocketClient';
 import { User } from '../types';
@@ -18,12 +18,19 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  // Synchronous session initialization from localStorage ensures 0ms flash and prevents redirect on refresh
+  const [initialSession] = useState<AuthResponse | null>(() => {
+    const session = authService.getCurrentSession();
+    if (session?.user?.id) {
+      chatService.setUserId(session.user.id);
+    }
+    return session;
+  });
+  const [user, setUser] = useState<User | null>(() => initialSession?.user ?? null);
+  const [token, setToken] = useState<string | null>(() => initialSession?.token ?? null);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   useEffect(() => {
-    // Restore session
     const session = authService.getCurrentSession();
     if (session) {
       setUser(session.user);
@@ -31,7 +38,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       chatService.setUserId(session.user.id);
       wsClient.connect(session.token);
     }
-    setIsLoading(false);
   }, []);
 
   const login = async (payload: LoginPayload) => {
@@ -53,6 +59,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = () => {
     authService.logout();
     wsClient.disconnect();
+    try {
+      sessionStorage.removeItem('cipherchat_active_conv_id');
+    } catch {
+      // ignore
+    }
     setUser(null);
     setToken(null);
   };

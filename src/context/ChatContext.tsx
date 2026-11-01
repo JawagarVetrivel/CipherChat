@@ -33,7 +33,13 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const { user, isAuthenticated } = useAuth();
 
   const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
+  const [activeConversationId, setActiveConversationId] = useState<string | null>(() => {
+    try {
+      return sessionStorage.getItem('cipherchat_active_conv_id') || null;
+    } catch {
+      return null;
+    }
+  });
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoadingConversations, setIsLoadingConversations] = useState(true);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
@@ -62,9 +68,22 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       .getConversations()
       .then((convs) => {
         setConversations(convs);
-        // If desktop and no active selection, default to first conversation
-        if (convs.length > 0 && !activeConversationIdRef.current) {
+        let targetId: string | null = null;
+        try {
+          targetId = sessionStorage.getItem('cipherchat_active_conv_id');
+        } catch {
+          targetId = null;
+        }
+
+        if (targetId && convs.some((c) => c.id === targetId)) {
+          setActiveConversationId(targetId);
+        } else if (convs.length > 0 && !activeConversationIdRef.current) {
           setActiveConversationId(convs[0].id);
+          try {
+            sessionStorage.setItem('cipherchat_active_conv_id', convs[0].id);
+          } catch {
+            // ignore
+          }
         }
       })
       .finally(() => setIsLoadingConversations(false));
@@ -181,6 +200,15 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const selectConversation = useCallback((id: string | null) => {
     setActiveConversationId(id);
+    try {
+      if (id) {
+        sessionStorage.setItem('cipherchat_active_conv_id', id);
+      } else {
+        sessionStorage.removeItem('cipherchat_active_conv_id');
+      }
+    } catch {
+      // ignore
+    }
     setTypingUsersMap({});
   }, []);
 
@@ -238,20 +266,20 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     async (peerUser: Omit<User, 'email'>): Promise<DirectConversation> => {
       const conv = await chatService.getOrCreateDirectConversation(peerUser);
       setConversations((prev) => [conv, ...prev.filter((c) => c.id !== conv.id)]);
-      setActiveConversationId(conv.id);
+      selectConversation(conv.id);
       return conv;
     },
-    []
+    [selectConversation]
   );
 
   const createGroup = useCallback(
     async (name: string, members: Array<Omit<User, 'email'>>, description?: string): Promise<Group> => {
       const newGroup = await chatService.createGroup(name, members, description);
       setConversations((prev) => [newGroup, ...prev.filter((c) => c.id !== newGroup.id)]);
-      setActiveConversationId(newGroup.id);
+      selectConversation(newGroup.id);
       return newGroup;
     },
-    []
+    [selectConversation]
   );
 
   const addGroupMembers = useCallback(
